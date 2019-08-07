@@ -184,6 +184,7 @@ class SubscriberCallback:
 
     def save_images(self, topic, msg, frame):
         img_handle = msg['img_handle']
+        tag = ''
         if 'defects' in msg:
             if msg['defects']:
                 tag = 'bad_'
