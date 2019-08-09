@@ -381,7 +381,6 @@ def zmqSubscriber(msgbus_cfg, queueDict, logger, jsonConfig, args, labels,
     """zmqSubscriber is the ZeroMQ callback to
     subscribe to classified results
     """
-
     logger.debug('Initializing message bus context')
     msgbus = mb.MsgbusContext(msgbus_cfg)
 
@@ -392,13 +391,16 @@ def zmqSubscriber(msgbus_cfg, queueDict, logger, jsonConfig, args, labels,
                             save_image=jsonConfig["save_image"],
                             display=jsonConfig["display"])
     while True:
-        meta_data, frame = subscriber.recv()
-        try:
-            sc.msg_frame_queue.put_nowait((meta_data, frame,))
-        except queue.Full:
-            logger.error("Dropping frames as the queue is full")
-        sc.callback(topic)
-
+        data = subscriber.recv()
+        if isinstance(data, (list, tuple,)):
+            try:
+                sc.msg_frame_queue.put_nowait(data)
+            except queue.Full:
+                logger.error("Dropping frames")
+                sc.callback(topic)
+        else:
+            logger.info(f'Classifier results: {data}')
+ 
 
 def main(args):
     """Main method.
@@ -451,16 +453,14 @@ def main(args):
 
     queueDict = {}
 
-    for topic in topicsList:
-        publisher, topic = topic.split("/")
-        queueDict[topic] = queue.Queue(maxsize=10)
-
     if not dev_mode and jsonConfig["cert_path"] is None:
         logger.error("Kindly Provide certificate directory in etcd config"
                      " when security mode is True")
         sys.exit(1)
 
-    for topic in queueDict.keys():
+    for topic in topicsList:
+        publisher, topic = topic.split("/")
+        queueDict[topic] = queue.Queue(maxsize=10)
         msgbus_cfg = Util.get_messagebus_config(topic, "sub", publisher,
                                                 config_client, dev_mode)
 
@@ -472,7 +472,11 @@ def main(args):
         subscribe_thread.daemon = True
         subscribe_thread.start()
 
-    if jsonConfig["display"].lower() == 'true':
+    if jsonConfig["display"].lower() == 'false':
+        while True:
+            time.sleep(10)
+
+    elif jsonConfig["display"].lower() == 'true':
 
         try:
             rootWin = Tk()
