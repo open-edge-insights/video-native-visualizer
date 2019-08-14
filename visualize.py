@@ -16,6 +16,7 @@ import threading
 from libs.ConfigManager import ConfigManager
 from libs.common.py.util import Util
 import eis.msgbus as mb
+from libs.log import configure_logging, LOG_LEVELS
 
 
 class SubscriberCallback:
@@ -356,36 +357,6 @@ def assert_exists(path):
     assert os.path.exists(path), 'Path: {} does not exist'.format(path)
 
 
-def get_logger(name):
-    """gets the logger object.
-
-    :param name: module name
-    :type: str
-    """
-    fmt_str = ('%(asctime)s : %(levelname)s : %(name)s : [%(filename)s] :' +
-               '%(funcName)s : in line : [%(lineno)d] : %(message)s')
-    base_log = os.path.join(
-               os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            'visualize.log'))
-
-    logger = logging.getLogger('visualizer')
-    logger.setLevel(logging.INFO)
-
-    # Do basic configuration of logging (just for stdout config)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    formatter = logging.Formatter(fmt_str)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    fh = logging.FileHandler(base_log)
-    fh.setLevel(logging.INFO)
-    formatter = logging.Formatter(fmt_str)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    return logger
-
 # TODO: Enlarge individual frame on respective bnutton click
 
 # def button_click(rootWin, frames, key):
@@ -430,8 +401,29 @@ def zmqSubscriber(msgbus_cfg, queueDict, logger, jsonConfig, args, labels,
 def main(args):
     """Main method.
     """
+    dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
+    # Initializing Etcd to set env variables
+    conf = {"certFile": "",
+            "keyFile": "",
+            "trustFile": ""}
+    if not dev_mode:
+        conf = {
+            "certFile": "/run/secrets/etcd_Visualizer_cert",
+            "keyFile": "/run/secrets/etcd_Visualizer_key",
+            "trustFile": "/run/secrets/ca_etcd"
+        }
+    cfg_mgr = ConfigManager()
+    config_client = cfg_mgr.get_config_client("etcd", conf)
+
     # WIndow name to be used later
-    logger = get_logger(__name__)
+    logFileName = 'visualizer.log'
+    log_dir = '/EIS/visualizer_logs'
+    # Creating log directory if it does not exist
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
+                               logFileName, log_dir,
+                               __name__)
     app_name = os.environ["AppName"]
     window_name = 'EIS Visualizer App'
 
@@ -443,20 +435,6 @@ def main(args):
     else:
         labels = None
 
-    dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
-    conf = {
-        "certFile": "",
-        "keyFile": "",
-        "trustFile": ""
-    }
-    if not dev_mode:
-        conf = {
-            "certFile": "/run/secrets/etcd_Visualizer_cert",
-            "keyFile": "/run/secrets/etcd_Visualizer_key",
-            "trustFile": "/run/secrets/ca_etcd"
-        }
-    cfg_mgr = ConfigManager()
-    config_client = cfg_mgr.get_config_client("etcd", conf)
     visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
     jsonConfig = json.loads(visualizerConfig)
     image_dir = os.environ["IMAGE_DIR"]
