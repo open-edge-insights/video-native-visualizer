@@ -443,15 +443,23 @@ def main(args):
     else:
         labels = None
 
-    conf = {"certFile": "",
-            "keyFile": "",
-            "trustFile": ""}
+    dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
+    conf = {
+        "certFile": "",
+        "keyFile": "",
+        "trustFile": ""
+    }
+    if not dev_mode:
+        conf = {
+            "certFile": "/run/secrets/etcd_Visualizer_cert",
+            "keyFile": "/run/secrets/etcd_Visualizer_key",
+            "trustFile": "/run/secrets/ca_etcd"
+        }
     cfg_mgr = ConfigManager()
     config_client = cfg_mgr.get_config_client("etcd", conf)
     visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
     jsonConfig = json.loads(visualizerConfig)
     image_dir = os.environ["IMAGE_DIR"]
-    dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
     profiling_mode = bool(strtobool(os.environ["PROFILING"]))
 
     # If user provides image_dir, create the directory if don't exists
