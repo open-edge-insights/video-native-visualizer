@@ -96,9 +96,7 @@ class SubscriberCallback:
         """
         if not self.msg_frame_queue.empty():
             results, blob = self.msg_frame_queue.get_nowait()
-        else:
-            self.logger.error('Queue is currently empty')
-        self.logger.info(f'Received message: {results}')
+        self.logger.debug(f'Received message: {results}')
 
         height = int(results['height'])
         width = int(results['width'])
@@ -568,8 +566,7 @@ def main(args):
                     try:
                         if not queueDict[key1].empty():
                             frame = queueDict[key1].get_nowait()
-                        else:
-                            logger.error('Queue is currently empty')
+
                         img = Image.fromarray(frame)
                         blue, green, red = img.split()
                         img = Image.merge("RGB", (red, green, blue))
