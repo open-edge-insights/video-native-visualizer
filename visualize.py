@@ -97,7 +97,7 @@ class SubscriberCallback:
         """
         if not self.msg_frame_queue.empty():
             results, blob = self.msg_frame_queue.get_nowait()
-        self.logger.debug(f'Received message: {results}')
+            self.logger.debug(f'Received message: {results}')
 
         height = int(results['height'])
         width = int(results['width'])
@@ -177,7 +177,6 @@ class SubscriberCallback:
 
         if self.save_image:
             self.save_images(topic, results, frame)
-
         if self.display.lower() == 'true':
             self.queue_publish(topic, frame)
         else:
@@ -209,7 +208,9 @@ class SubscriberCallback:
         if self.dir_name or self.display.lower() == 'true':
             self.drawdefect_thread = threading.Thread(target=self.draw_defect,
                                                       args=(topic,))
+            self.drawdefect_thread.daemon = True
             self.drawdefect_thread.start()
+            self.drawdefect_thread.join()
         else:
             self.logger.info(f'Classifier_results: {msg}')
 
@@ -467,7 +468,7 @@ def main(args):
                                                   logger, jsonConfig, args,
                                                   labels, topic,
                                                   profiling_mode))
-
+        subscribe_thread.daemon = True
         subscribe_thread.start()
 
     if jsonConfig["display"].lower() == 'true':
