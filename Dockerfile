@@ -1,11 +1,11 @@
 # Dockerfile for Visualizer
 ARG EIS_VERSION
-FROM ia_pybase:$EIS_VERSION
+FROM ia_pybase:$EIS_VERSION as pybase
 LABEL description="Visualizer image"
 
 ARG HOST_TIME_ZONE=""
 
-WORKDIR /EIS
+WORKDIR ${PY_WORK_DIR}
 
 # Setting timezone inside the container
 RUN echo "$HOST_TIME_ZONE" >/etc/timezone
@@ -43,8 +43,23 @@ RUN git clone https://github.com/kragniz/python-etcd3 && \
     cd .. && \
     rm -rf python-etcd3
 
-ENV PYTHONPATH /EIS/
+ENV PYTHONPATH ${PY_WORK_DIR}/
 ENV LD_LIBRARY_PATH /usr/local/lib
+
+FROM ia_common:$EIS_VERSION as common
+
+FROM pybase
+
+COPY --from=common /libs ${PY_WORK_DIR}/libs
+COPY --from=common /Util ${PY_WORK_DIR}/Util
+
+RUN cd ./libs/EISMessageBus && \
+    mkdir build && \
+    cd build && \
+    cmake -DWITH_PYTHON=ON .. && \
+    make && \
+    make install
+
 ADD visualize.py .
 
 ENTRYPOINT ["python3.6", "visualize.py"]
