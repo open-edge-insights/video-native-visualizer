@@ -21,7 +21,7 @@ from libs.log import configure_logging, LOG_LEVELS
 
 class SubscriberCallback:
     """Object for the databus callback to wrap needed state variables for the
-    callback in to IEI.
+    callback in to EIS.
     """
 
     def __init__(self, topicQueueDict, logger, profiling,
@@ -594,7 +594,7 @@ def main(args):
         except Exception:
             logger.exception('Error during execution:')
         finally:
-            logger.exception('Destroying IEI databus context')
+            logger.exception('Destroying EIS databus context')
             os._exit(1)
 
 

@@ -1,5 +1,5 @@
 # Intel Edge Insights Simple Visualizer
-Simple visualizer for the IEI platform.
+Simple visualizer for the EIS platform.
 
 ### 1. Running as a docker container
 
@@ -15,13 +15,10 @@ Simple visualizer for the IEI platform.
   > 1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
   > 2. The user has to make sure the path provided in docker-compose volumes of visualizer correlates to the one in etcd before running visualizer if he wishes to save images.
   > 3. Run this command in terminal if you run into tkinter couldn't connect to display exception
-    
+
     ```sh
     $ xhost +
     ```
-
-    > Note: The Visualizer will not work with time-series / point data if used with docker container approach.
-    > For point data, use the bare-metal run to see the results printed in the terminal.
 
 * If one needs to remove the classified images on a periodic basis:
 
