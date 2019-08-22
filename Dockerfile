@@ -22,7 +22,7 @@ RUN apt-get install -y libmbedtls-dev \
 
 RUN wget https://bootstrap.pypa.io/get-pip.py && \
     python3.6 get-pip.py
-ADD requirements.txt .
+COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
 RUN apt-get install -y python3.6-tk
@@ -44,7 +44,6 @@ RUN git clone https://github.com/kragniz/python-etcd3 && \
     rm -rf python-etcd3
 
 ENV PYTHONPATH ${PY_WORK_DIR}/
-ENV LD_LIBRARY_PATH /usr/local/lib
 
 FROM ia_common:$EIS_VERSION as common
 
@@ -54,12 +53,13 @@ COPY --from=common /libs ${PY_WORK_DIR}/libs
 COPY --from=common /Util ${PY_WORK_DIR}/Util
 
 RUN cd ./libs/EISMessageBus && \
+    rm -rf build deps && \
     mkdir build && \
     cd build && \
     cmake -DWITH_PYTHON=ON .. && \
     make && \
     make install
 
-ADD visualize.py .
+COPY visualize.py .
 
 ENTRYPOINT ["python3.6", "visualize.py"]
