@@ -464,6 +464,12 @@ def main(args):
         msgbus_cfg = Util.get_messagebus_config(topic, "sub", publisher,
                                                 config_client, dev_mode)
 
+        topic = topic.strip()
+        if not dev_mode:
+            for key in msgbus_cfg[topic]:
+                if msgbus_cfg[topic][key] is None:
+                    raise ValueError("Invalid Config")
+
         subscribe_thread = threading.Thread(target=zmqSubscriber,
                                             args=(msgbus_cfg, queueDict,
                                                   logger, jsonConfig, args,
