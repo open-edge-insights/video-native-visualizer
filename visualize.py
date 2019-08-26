@@ -465,7 +465,9 @@ def main(args):
                                                 config_client, dev_mode)
 
         topic = topic.strip()
-        if not dev_mode:
+        mode_address = os.environ[topic + "_cfg"].split(",")
+        mode = mode_address[0].strip()
+        if (not dev_mode and mode == "zmq_tcp"):
             for key in msgbus_cfg[topic]:
                 if msgbus_cfg[topic][key] is None:
                     raise ValueError("Invalid Config")
