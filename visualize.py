@@ -419,15 +419,9 @@ def main(args):
     cfg_mgr = ConfigManager()
     config_client = cfg_mgr.get_config_client("etcd", conf)
 
-    # WIndow name to be used later
-    logFileName = 'visualizer.log'
-    log_dir = '/EIS/visualizer_logs'
-    # Creating log directory if it does not exist
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
     logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
-                               logFileName, log_dir,
                                __name__)
+
     app_name = os.environ["AppName"]
     window_name = 'EIS Visualizer App'
 
