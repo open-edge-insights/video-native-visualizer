@@ -397,7 +397,7 @@ def zmqSubscriber(msgbus_cfg, queueDict, logger, jsonConfig, args, labels,
                 sc.msg_frame_queue.put_nowait(data)
             except queue.Full:
                 logger.error("Dropping frames")
-                sc.callback(topic)
+            sc.callback(topic)
         else:
             logger.info(f'Classifier results: {data}')
  
@@ -457,7 +457,7 @@ def main(args):
         logger.error("Kindly Provide certificate directory in etcd config"
                      " when security mode is True")
         sys.exit(1)
-
+    sub_thread_list = []
     for topic in topicsList:
         publisher, topic = topic.split("/")
         queueDict[topic] = queue.Queue(maxsize=10)
@@ -478,12 +478,15 @@ def main(args):
                                                   labels, topic,
                                                   profiling_mode))
         subscribe_thread.daemon = True
+        sub_thread_list.append(subscribe_thread)
         subscribe_thread.start()
 
     if jsonConfig["display"].lower() == 'false':
-        while True:
-            time.sleep(10)
-
+        try:
+            for thread in sub_thread_list:
+                thread.join()
+        except KeyboardInterrupt:
+            logger.info('Quitting...')
     elif jsonConfig["display"].lower() == 'true':
 
         try:
