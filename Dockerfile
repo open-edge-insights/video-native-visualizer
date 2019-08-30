@@ -7,6 +7,7 @@ ARG HOST_TIME_ZONE=""
 
 WORKDIR ${PY_WORK_DIR}
 
+ARG DEBIAN_FRONTEND=noninteractive
 # Setting timezone inside the container
 RUN echo "$HOST_TIME_ZONE" >/etc/timezone
 RUN cat /etc/timezone
