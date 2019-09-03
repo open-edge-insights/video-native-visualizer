@@ -56,17 +56,29 @@ class SubscriberCallback:
         self.logger.debug(f'Profiling is : {self.profiling}')
 
         self.curr_frame = 0
-        self.ts_iev_fps_vi = 0.0
-        self.ts_iev_img_write = 0.0
+        
+        self.vi_diff = 0.0
+        self.vi_filter_diff = 0.0
+        self.vi_filter_input_queue_wait = 0.0
+        self.vi_filter_output_queue_wait = 0.0
+        self.vi_internal_wait_in_queues = 0.0
+        self.vi_encode = 0.0
+        self.ts_vi_queue_wait = 0.0
+        self.vi_to_va = 0.0
+        
+        self.va_diff = 0.0
+        self.va_classify_diff = 0.0
+        self.va_classify_input_queue_wait = 0.0
+        self.va_classify_output_queue_wait = 0.0
+        self.va_internal_queue_wait = 0.0
+        self.va_to_vs = 0.0
+        self.e2e = 0.0
 
-        self.ts_iev_fps_va = 0.0
-        self.ts_iev_va_avg_wait = 0.0
-        self.ts_iev_va_algo = 0.0
-        self.ts_iev_img_read = 0.0
-
-        self.ts_iev_total_proc = 0.0
-        self.ts_da_to_visualizer = 0.0
-        self.ts_va_to_da = 0.0
+        self.timeseries_points = 0
+        self.ic_pub_total = 0.0
+        self.ic_pub_wait_queue = 0.0
+        self.ic_to_vs = 0.0
+        
         self.msg_frame_queue = queue.Queue(maxsize=15)
 
     def queue_publish(self, topic, frame):
@@ -200,141 +212,192 @@ class SubscriberCallback:
 
         :param topic: Topic the message was published on
         :type: str
-        :param msg: Message received on the given topic (JSON blob)
-        :type: str
         """
-        if self.profiling is True:
-            msg = self.add_profile_data(msg)
-
         if self.dir_name or self.display.lower() == 'true':
             self.drawdefect_thread = threading.Thread(target=self.draw_defect,
                                                       args=(topic,))
             self.drawdefect_thread.daemon = True
             self.drawdefect_thread.start()
             self.drawdefect_thread.join()
-        else:
-            self.logger.info(f'Classifier_results: {msg}')
 
     @staticmethod
+    def prepare_timeseries_stats(results):
+        timeseries_stats = dict()
+        data = results['data'].split(',')
+        for d in data[1:]:
+            pair = d.split('=')
+            if len(pair) == 2  :
+                timeseries_stats[pair[0]] = pair[1].split()[0]
+
+        diff = int(timeseries_stats['ts_idbconn_pub_exit']) - int(timeseries_stats['ts_idbconn_pub_entry'])
+        timeseries_stats['ic_pub_total'] = diff
+        diff = int(timeseries_stats['ts_idbconn_pub_queue_exit']) - int(timeseries_stats['ts_idbconn_pub_queue_entry'])
+        timeseries_stats['ic_pub_wait_queue'] = diff
+        diff = int(results['ts_visualize_entry']) - int(timeseries_stats['ts_idbconn_pub_exit'])
+        timeseries_stats['ic_to_vs'] = diff
+        return timeseries_stats
+
+    def prepare_avg_stats_timeseries(self, timeseries_stats):
+        self.ic_pub_total = self.ic_pub_total + timeseries_stats['ic_pub_total']
+        self.ic_pub_wait_queue = self.ic_pub_wait_queue + timeseries_stats['ic_pub_wait_queue']
+        self.ic_to_vs  = self.ic_to_vs + timeseries_stats['ic_to_vs']
+        self.timeseries_points = self.timeseries_points + 1
+        avg_timeseries_stats = dict()
+        avg_timeseries_stats['avg_ic_pub_total'] = self.ic_pub_total / self.timeseries_points
+        avg_timeseries_stats['avg_ic_pub_wait_queue'] = self.ic_pub_wait_queue / self.timeseries_points
+        avg_timeseries_stats['avg_ic_to_vs'] = self.ic_to_vs / self.timeseries_points
+        return avg_timeseries_stats
+    
+    @staticmethod
     def prepare_per_frame_stats(results):
-        # Total time in vi + vi->va transfer
-        vi_diff = results["ts_va_entry"] - \
-            results["ts_vi_fr_store_entry"]
-
-        vi_fr_encode = results["ts_vi_fr_encode_exit"] -\
-            results["ts_vi_fr_encode_entry"]
-
-        # Total time in img write
-        vi_img_write_diff = results["ts_vi_fr_store_exit"] -\
-            results["ts_vi_fr_store_entry"]
-
-        # Total time in va
-        va_diff = results["ts_va_analy_exit"] - \
-            results["ts_va_entry"]
-
-        va_wait = results["ts_va_proc_entry"] - \
-            results["ts_va_img_read_exit"]
-
-        # Time taken to read image in va
-        va_img_read = results["ts_va_img_read_exit"] -\
-            results["ts_va_img_read_entry"]
-
-        va_algo_diff = results["ts_va_analy_exit"] -\
-            results["ts_va_analy_entry"]
-
-        va_np_proc_diff = results["ts_va_proc_np_exit"] -\
-            results["ts_va_proc_np_entry"]
-
-        va_np_reshape = results["ts_va_proc_np_reshape_exit"] - \
-            results["ts_va_proc_np_reshape_entry"]
-
-        va_to_da = results["ts_sm_pub_entry"] - \
-            results["ts_va_analy_exit"]
-
-        da_to_visualizer = results["ts_iev_entry"] -\
-            results["ts_sm_pub_entry"]
-
-        fps_diff = results["ts_iev_entry"] - \
-            results["ts_vi_fr_store_entry"]
-
+        
         per_frame_stats = dict()
+        
+        vi_diff = int(results['ts_vi_exit']) - int(results['ts_vi_entry'])
 
-        per_frame_stats["vi_and_vi_to_va"] = vi_diff
-        per_frame_stats["vi_img_write"] = vi_img_write_diff
-        per_frame_stats["vi_fr_encode"] = vi_fr_encode
-        per_frame_stats["va_total"] = va_diff
-        per_frame_stats["va_np_proc_diff"] = va_np_proc_diff
-        per_frame_stats["va_np_reshape"] = va_np_reshape
-        per_frame_stats["va_wait"] = va_wait
-        per_frame_stats["va_img_read"] = va_img_read
-        per_frame_stats["va_algo"] = va_algo_diff
-        per_frame_stats["va_to_da"] = va_to_da
-        per_frame_stats["da_to_visualizer"] = da_to_visualizer
-        per_frame_stats["e2e"] = fps_diff
+        filter_stats = ['ts_vi_filter_entry', 'ts_vi_filter_exit']
+        check = all(stat_info in results for stat_info in filter_stats)
 
+        if check is True:
+            vi_filter_diff = int(results['ts_vi_filter_exit']) - int(results['ts_vi_filter_entry'])
+            vi_filter_input_queue_wait = int(results['ts_vi_filter_entry']) - int(results['ts_vi_entry'])
+            vi_filter_output_queue_wait = int(results['ts_vi_exit']) - int(results['ts_vi_filter_exit'])
+            vi_internal_wait_in_queues = vi_filter_input_queue_wait + vi_filter_output_queue_wait
+
+        vi_encode = int(results['ts_vi_encode_end']) - int(results['ts_vi_encode_start'])
+        
+        vi_to_va = int(results['ts_va_entry']) - int(results['ts_vi_exit'])
+        
+        va_diff = int(results['ts_va_exit']) - int(results['ts_va_entry'])
+        va_classify_diff = int(results['ts_va_classify_exit']) - int(results['ts_va_classify_entry'])
+        va_classify_input_queue_wait = int(results['ts_va_classify_entry']) - int(results['ts_va_entry'])
+        va_classify_output_queue_wait = int(results['ts_va_exit']) - int(results['ts_va_classify_exit'])
+        va_internal_queue_wait = va_classify_input_queue_wait + va_classify_output_queue_wait
+
+        va_to_vs = int(results['ts_visualize_entry']) - int(results['ts_va_exit'])
+
+        e2e = int(results['ts_visualize_entry']) - int(results['ts_vi_entry'])
+
+        per_frame_stats['vi_diff'] = vi_diff
+        
+        if check is True:
+            per_frame_stats['vi_filter_diff'] = vi_filter_diff
+            per_frame_stats['vi_filter_input_queue_wait'] = vi_filter_input_queue_wait
+            per_frame_stats['vi_filter_output_queue_wait'] = vi_filter_output_queue_wait
+            per_frame_stats['vi_internal_wait_in_queues'] = vi_internal_wait_in_queues
+
+        per_frame_stats['vi_encode'] = vi_encode
+        per_frame_stats['ts_vi_queue_wait'] = int(results['ts_vi_queue_wait'])
+        per_frame_stats['vi_to_va'] = vi_to_va
+
+        per_frame_stats['va_diff'] = va_diff
+        per_frame_stats['va_classify_diff'] = va_classify_diff
+        per_frame_stats['va_classify_input_queue_wait'] = va_classify_input_queue_wait
+        per_frame_stats['va_classify_output_queue_wait'] = va_classify_output_queue_wait
+        per_frame_stats['va_internal_queue_wait'] = va_internal_queue_wait
+        per_frame_stats['va_to_vs'] = va_to_vs
+        per_frame_stats['e2e'] = e2e
+        
         return per_frame_stats
 
-    def prepare_avg_stats(self, per_frame_stats, results):
+    def prepare_avg_stats(self, per_frame_stats):
         self.curr_frame = self.curr_frame + 1
-        self.ts_iev_fps_vi += per_frame_stats["vi_and_vi_to_va"]
-        ts_avg_vi = self.ts_iev_fps_vi/self.curr_frame
 
-        self.ts_iev_img_write += per_frame_stats["vi_img_write"]
-        ts_avg_vi_img_write = self.ts_iev_img_write/self.curr_frame
+        filter_stats = ['vi_filter_diff', 'vi_filter_input_queue_wait', 'vi_filter_output_queue_wait', 'vi_internal_wait_in_queues']
+        check = all(stat_info in filter_stats for stat_info in per_frame_stats)
 
-        self.ts_iev_fps_va += per_frame_stats["va_total"]
-        ts_avg_va = self.ts_iev_fps_va / self.curr_frame
+        if check is True:
+            self.vi_filter_diff += per_frame_stats['vi_filter_diff']
+            avg_vi_filter_diff = self.vi_filter_diff / self.curr_frame
 
-        self.ts_iev_va_avg_wait += per_frame_stats["va_wait"]
-        ts_avg_va_wait = self.ts_iev_va_avg_wait / self.curr_frame
+            self.vi_filter_input_queue_wait += per_frame_stats['vi_filter_input_queue_wait']
+            avg_vi_filter_input_queue_wait = self.vi_filter_input_queue_wait / self.curr_frame
+            
+            self.vi_filter_output_queue_wait += per_frame_stats['vi_filter_output_queue_wait']
+            avg_vi_filter_output_queue_wait = self.vi_filter_output_queue_wait / self.curr_frame
 
-        self.ts_iev_img_read += per_frame_stats["va_img_read"]
-        ts_avg_va_img_read = self.ts_iev_img_read / self.curr_frame
+            self.vi_internal_wait_in_queues += per_frame_stats['vi_internal_wait_in_queues']
+            avg_vi_internal_wait_in_queues = self.vi_internal_wait_in_queues / self.curr_frame
 
-        self.ts_iev_va_algo += per_frame_stats["va_algo"]
-        ts_avg_va_algo = self.ts_iev_va_algo / self.curr_frame
+        self.vi_diff += per_frame_stats['vi_diff']
+        avg_vi_diff = self.vi_diff / self.curr_frame
 
-        self.ts_va_to_da += per_frame_stats["va_to_da"]
-        ts_avg_va_to_da = self.ts_va_to_da / self.curr_frame
+        self.vi_encode += per_frame_stats['vi_encode']
+        avg_vi_encode = self.vi_encode / self.curr_frame
 
-        self.ts_da_to_visualizer += per_frame_stats["da_to_visualizer"]
-        ts_avg_da_to_visualizer = self.ts_da_to_visualizer / self.curr_frame
+        self.ts_vi_queue_wait += per_frame_stats['ts_vi_queue_wait']
+        avg_ts_vi_queue_wait = self.ts_vi_queue_wait / self.curr_frame
 
-        fps_diff = results["ts_iev_entry"] - \
-            results["ts_vi_fr_store_entry"]
+        self.vi_to_va += per_frame_stats['vi_to_va']
+        avg_vi_to_va = self.vi_to_va / self.curr_frame
 
-        self.ts_iev_total_proc += fps_diff
-        ts_avg_e2e = self.ts_iev_total_proc/self.curr_frame
+        self.va_diff += per_frame_stats['va_diff']
+        avg_va_diff = self.va_diff / self.curr_frame
+
+        self.va_classify_diff += per_frame_stats['va_classify_diff']
+        avg_va_classify_diff = self.va_classify_diff / self.curr_frame
+
+        self.va_classify_input_queue_wait += per_frame_stats['va_classify_input_queue_wait']
+        avg_va_classify_input_queue_wait = self.va_classify_input_queue_wait / self.curr_frame
+
+        self.va_classify_output_queue_wait += per_frame_stats['va_classify_output_queue_wait']
+        avg_va_classify_output_queue_wait = self.va_classify_output_queue_wait / self.curr_frame
+
+        self.va_internal_queue_wait += per_frame_stats['va_internal_queue_wait']
+        avg_va_internal_queue_wait = self.va_internal_queue_wait / self.curr_frame
+
+        self.va_to_vs += per_frame_stats['va_to_vs']
+        avg_va_to_vs = self.va_to_vs / self.curr_frame
+
+        self.e2e += per_frame_stats['e2e']
+        avg_e2e = self.e2e / self.curr_frame
 
         avg_stats = dict()
-        avg_stats["avg_vi_and_vi_to_va"] = ts_avg_vi
-        avg_stats["avg_vi_img_write"] = ts_avg_vi_img_write
-        avg_stats["avg_va_total"] = ts_avg_va
-        avg_stats["avg_va_wait"] = ts_avg_va_wait
-        avg_stats["avg_va_img_read"] = ts_avg_va_img_read
-        avg_stats["avg_va_algo"] = ts_avg_va_algo
-        avg_stats["ts_avg_va_to_da"] = ts_avg_va_to_da
-        avg_stats["ts_avg_da_to_visualizer"] = ts_avg_da_to_visualizer
-        avg_stats["avg_e2e"] = ts_avg_e2e
+        
+        avg_stats['avg_vi_diff'] = avg_vi_diff
+        if check is True:
+            avg_stats['avg_vi_filter_diff'] = avg_vi_filter_diff
+            avg_stats['avg_vi_filter_input_queue_wait'] = avg_vi_filter_input_queue_wait
+            avg_stats['avg_vi_filter_output_queue_wait'] = avg_vi_filter_output_queue_wait
+            avg_stats['avg_vi_internal_wait_in_queues'] = avg_vi_internal_wait_in_queues
 
+        avg_stats['avg_vi_encode'] = avg_vi_encode
+        avg_stats['avg_ts_vi_queue_wait'] = avg_ts_vi_queue_wait
+        avg_stats['avg_vi_to_va'] = avg_vi_to_va
+
+        avg_stats['avg_va_diff'] = avg_va_diff
+        avg_stats['avg_va_classify_diff'] = avg_va_classify_diff
+
+        avg_stats['avg_va_classify_input_queue_wait'] = avg_va_classify_input_queue_wait
+        avg_stats['avg_va_classify_output_queue_wait'] = avg_va_classify_output_queue_wait
+        avg_stats['avg_va_internal_queue_wait'] = avg_va_internal_queue_wait
+        avg_stats['avg_va_to_vs'] = avg_va_to_vs
+        avg_stats['avg_e2e'] = avg_e2e
+        
         return avg_stats
 
-    def add_profile_data(self, msg):
-        results = json.loads(msg)
-        results["ts_iev_entry"] = float(time.time()*1000)
-        diff = int(results["ts_iev_entry"]) - \
-            int(results["ts_vi_fr_store_entry"])
-        results["ts_iev_e2e"] = float(diff)
+    def add_profile_data_timeseries(self, data):
+        data['ts_visualize_entry'] = str(round(time.time()*1000))
+        self.logger.info(f'Original timeseries is: {data}')
+        timeseries_stats = SubscriberCallback.prepare_timeseries_stats(data)
+        avg_timeseries_stats = self.prepare_avg_stats_timeseries(timeseries_stats)
+        self.logger.info(f'==========STATS START==========')
+        self.logger.info(f'timeseries_stats: {timeseries_stats}')
+        self.logger.info(f'avg_timeseries_stats: {avg_timeseries_stats}')
+        self.logger.info(f'==========STATS END==========\n')
+        return json.dumps(data)
 
-        per_frame_stats = SubscriberCallback.prepare_per_frame_stats(results)
-        avg_value = self.prepare_avg_stats(per_frame_stats, results)
+    def add_profile_data(self, data):
+        data['ts_visualize_entry'] = str(round(time.time()*1000))
+        per_frame_stats = SubscriberCallback.prepare_per_frame_stats(data)
+        avg_value = self.prepare_avg_stats(per_frame_stats)
 
         self.logger.info(f'==========STATS START==========')
+        self.logger.info(f'Original data is: {data}')
         self.logger.info(f'Per frame stats: {per_frame_stats}')
         self.logger.info(f'frame avg stats: {avg_value}')
-        self.logger.info(f'==========STATS END==========')
-
-        return json.dumps(results)
+        self.logger.info(f'==========STATS END==========\n')
+        return json.dumps(data)
 
 
 def parse_args():
@@ -377,7 +440,7 @@ def assert_exists(path):
 
 
 def zmqSubscriber(msgbus_cfg, queueDict, logger, jsonConfig, args, labels,
-                  topic, profiling_mode):
+                  topic, profiling):
     """zmqSubscriber is the ZeroMQ callback to
     subscribe to classified results
     """
@@ -386,19 +449,26 @@ def zmqSubscriber(msgbus_cfg, queueDict, logger, jsonConfig, args, labels,
 
     logger.debug(f'[INFO] Initializing subscriber for topic \'{topic}\'')
     subscriber = msgbus.new_subscriber(topic)
-    sc = SubscriberCallback(queueDict, logger, profiling_mode,
+    sc = SubscriberCallback(queueDict, logger, profiling,
                             labels=labels, dir_name=os.environ["IMAGE_DIR"],
                             save_image=jsonConfig["save_image"],
                             display=jsonConfig["display"])
+
     while True:
         data = subscriber.recv()
         if isinstance(data, (list, tuple,)):
             try:
+                if profiling is True:
+                    sc.add_profile_data(data[0])
+                    
                 sc.msg_frame_queue.put_nowait(data)
             except queue.Full:
                 logger.error("Dropping frames")
             sc.callback(topic)
+
         else:
+            if profiling is True:
+                sc.add_profile_data_timeseries(data)
             logger.info(f'Classifier results: {data}')
  
 
@@ -436,7 +506,7 @@ def main(args):
     visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
     jsonConfig = json.loads(visualizerConfig)
     image_dir = os.environ["IMAGE_DIR"]
-    profiling_mode = bool(strtobool(os.environ["PROFILING"]))
+    profiling = bool(strtobool(os.environ["PROFILING_MODE"]))
 
     # If user provides image_dir, create the directory if don't exists
     if image_dir:
@@ -470,7 +540,7 @@ def main(args):
                                             args=(msgbus_cfg, queueDict,
                                                   logger, jsonConfig, args,
                                                   labels, topic,
-                                                  profiling_mode))
+                                                  profiling))
         subscribe_thread.daemon = True
         sub_thread_list.append(subscribe_thread)
         subscribe_thread.start()
