@@ -14,9 +14,10 @@ from tkinter import *
 from PIL import Image, ImageTk
 import threading
 from libs.ConfigManager import ConfigManager
-from libs.common.py.util import Util
+from util.util import Util
+from util.msgbusutil import MsgBusUtil
 import eis.msgbus as mb
-from libs.log import configure_logging, LOG_LEVELS
+from util.log import configure_logging, LOG_LEVELS
 
 
 class SubscriberCallback:
@@ -513,7 +514,7 @@ def main(args):
         if not os.path.exists(image_dir):
             os.mkdir(image_dir)
 
-    topicsList = Util.get_topics_from_env("sub")
+    topicsList = MsgBusUtil.get_topics_from_env("sub")
 
     queueDict = {}
 
@@ -525,7 +526,7 @@ def main(args):
     for topic in topicsList:
         publisher, topic = topic.split("/")
         queueDict[topic] = queue.Queue(maxsize=10)
-        msgbus_cfg = Util.get_messagebus_config(topic, "sub", publisher,
+        msgbus_cfg = MsgBusUtil.get_messagebus_config(topic, "sub", publisher,
                                                 config_client, dev_mode)
 
         topic = topic.strip()
