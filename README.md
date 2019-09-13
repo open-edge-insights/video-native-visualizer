@@ -56,10 +56,3 @@ Simple visualizer for the EIS platform.
   ```sh
     $ python3.6 visualize.py --labels labels.json -i ./test
   ```
-
-#### Command Line Arguments
-  Use the below command to know the usage of the script `visualize.py`.
-
-  ```sh
-    $ python3.6 visualize.py --help
-  ```
