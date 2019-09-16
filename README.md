@@ -3,7 +3,10 @@ Simple visualizer for the EIS platform.
 
 ### 1. Running as a docker container
 
-#### Steps to build and run
+#### Steps to build and run viualizer
+
+* Follow [provision/README.md](../README#provision-eis.md) for EIS provisioning
+  if not done already as part of EIS stack setup
 
 * Running visualizer as a container from [docker_setup](../../docker_setup):
 
