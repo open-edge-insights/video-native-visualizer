@@ -476,7 +476,7 @@ class SubscriberCallback:
         self.logger.info(f'timeseries_stats: {timeseries_stats}')
         self.logger.info(f'avg_timeseries_stats: {avg_timeseries_stats}')
         self.logger.info(f'==========STATS END==========\n')
-        return json.dumps(data)
+        return data
 
     def add_profile_data(self, data):
         data['ts_visualize_entry'] = str(round(time.time()*1000))
@@ -488,7 +488,7 @@ class SubscriberCallback:
         self.logger.info(f'Per frame stats: {per_frame_stats}')
         self.logger.info(f'frame avg stats: {avg_value}')
         self.logger.info(f'==========STATS END==========\n')
-        return json.dumps(data)
+        return data
 
 
 def parse_args():
