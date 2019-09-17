@@ -191,9 +191,6 @@ class SubscriberCallback:
                     cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
                                 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-        if self.save_image:
-            self.save_images(topic, results, frame)
-
         return results, frame
 
     def save_images(self, topic, msg, frame):
@@ -226,20 +223,26 @@ class SubscriberCallback:
 
         while True:
             data = subscriber.recv()
-            metadata, blob = data
 
-            if self.profiling is True:
-                metadata = self.add_profile_data(metadata)
+            if isinstance(data, (list, tuple, )):
+                metadata, blob = data
 
-            if self.dir_name or self.display.lower() == 'true':
+                if self.profiling is True:
+                    self.add_profile_data(metadata)
+
                 results, frame = self.draw_defect(metadata, blob, topic)
+
+                if self.save_image:
+                    self.save_images(topic, results, frame)
 
                 if self.display.lower() == 'true':
                     self.queue_publish(topic, frame)
                 else:
                     self.logger.info(f'Classifier_results: {results}')
             else:
-                self.logger.info(f'Classifier_results: {metadata}')
+                if self.profiling is True:
+                    self.add_profile_data(data)
+                self.logger.info(f'Classifier_results: {data}')
 
     @staticmethod
     def prepare_timeseries_stats(results):
@@ -542,7 +545,6 @@ def msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
 
         callback_thread = threading.Thread(target=sc.callback,
                                            args=(msgbus_cfg, topic, ))
-        callback_thread.daemon = True
         callback_thread.start()
 
 
