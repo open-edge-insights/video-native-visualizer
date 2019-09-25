@@ -566,7 +566,7 @@ def main(args):
     config_client = cfg_mgr.get_config_client("etcd", conf)
 
     logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
-                               __name__)
+                               __name__,dev_mode)
 
     app_name = os.environ["AppName"]
     window_name = 'EIS Visualizer App'
