@@ -19,7 +19,6 @@ from util.msgbusutil import MsgBusUtil
 import eis.msgbus as mb
 from util.log import configure_logging, LOG_LEVELS
 
-
 class SubscriberCallback:
     """Object for the databus callback to wrap needed state variables for the
     callback in to EIS.
@@ -553,15 +552,10 @@ def main(args):
     """
     dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
     # Initializing Etcd to set env variables
-    conf = {"certFile": "",
-            "keyFile": "",
-            "trustFile": ""}
-    if not dev_mode:
-        conf = {
-            "certFile": "/run/secrets/etcd_Visualizer_cert",
-            "keyFile": "/run/secrets/etcd_Visualizer_key",
-            "trustFile": "/run/secrets/ca_etcd"
-        }
+
+    app_name = os.environ["AppName"]
+    conf = Util.get_crypto_dict(app_name)
+        
     cfg_mgr = ConfigManager()
     config_client = cfg_mgr.get_config_client("etcd", conf)
 
