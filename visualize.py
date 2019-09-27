@@ -294,46 +294,46 @@ class SubscriberCallback:
 
         per_frame_stats = dict()
 
-        vi_diff = int(results['ts_vi_exit']) - int(results['ts_vi_entry'])
+        vi_diff = results['ts_vi_exit'] - results['ts_vi_entry']
 
         filter_stats = ['ts_vi_filter_entry', 'ts_vi_filter_exit']
         check = all(stat_info in results for stat_info in filter_stats)
 
         if check is True:
-            vi_filter_diff = int(results['ts_vi_filter_exit']) - \
-                int(results['ts_vi_filter_entry'])
+            vi_filter_diff = results['ts_vi_filter_exit'] - \
+                results['ts_vi_filter_entry']
 
-            vi_filter_input_queue_wait = int(results['ts_vi_filter_entry']) - \
-                int(results['ts_vi_entry'])
+            vi_filter_input_queue_wait = results['ts_vi_filter_entry'] - \
+                results['ts_vi_entry']
 
-            vi_filter_output_queue_wait = int(results['ts_vi_exit']) - \
-                int(results['ts_vi_filter_exit'])
+            vi_filter_output_queue_wait = results['ts_vi_exit'] - \
+                results['ts_vi_filter_exit']
 
             vi_internal_wait_in_queues = vi_filter_input_queue_wait + \
                 vi_filter_output_queue_wait
 
-        vi_encode = int(results['ts_vi_encode_end']) - \
-            int(results['ts_vi_encode_start'])
+        vi_encode = results['ts_vi_encode_end'] - \
+            results['ts_vi_encode_start']
 
-        vi_to_va = int(results['ts_va_entry']) - int(results['ts_vi_exit'])
+        vi_to_va = results['ts_va_entry'] - results['ts_vi_exit']
 
-        va_diff = int(results['ts_va_exit']) - int(results['ts_va_entry'])
-        va_classify_diff = int(results['ts_va_classify_exit']) - \
-            int(results['ts_va_classify_entry'])
+        va_diff = results['ts_va_exit'] - results['ts_va_entry']
+        va_classify_diff = results['ts_va_classify_exit'] - \
+            results['ts_va_classify_entry']
 
-        va_classify_input_queue_wait = int(results['ts_va_classify_entry']) - \
-            int(results['ts_va_entry'])
+        va_classify_input_queue_wait = results['ts_va_classify_entry'] - \
+            results['ts_va_entry']
 
-        va_classify_output_queue_wait = int(results['ts_va_exit']) - \
-            int(results['ts_va_classify_exit'])
+        va_classify_output_queue_wait = results['ts_va_exit'] - \
+            results['ts_va_classify_exit']
 
         va_internal_queue_wait = va_classify_input_queue_wait + \
             va_classify_output_queue_wait
 
-        va_to_vs = int(results['ts_visualize_entry']) - \
-            int(results['ts_va_exit'])
+        va_to_vs = results['ts_visualize_entry'] - \
+            results['ts_va_exit']
 
-        e2e = int(results['ts_visualize_entry']) - int(results['ts_vi_entry'])
+        e2e = results['ts_visualize_entry'] - results['ts_vi_entry']
 
         per_frame_stats['vi_diff'] = vi_diff
 
@@ -347,7 +347,7 @@ class SubscriberCallback:
                 vi_internal_wait_in_queues
 
         per_frame_stats['vi_encode'] = vi_encode
-        per_frame_stats['ts_vi_queue_wait'] = int(results['ts_vi_queue_wait'])
+        per_frame_stats['ts_vi_queue_wait'] = results['ts_vi_queue_wait']
         per_frame_stats['vi_to_va'] = vi_to_va
 
         per_frame_stats['va_diff'] = va_diff
@@ -466,7 +466,7 @@ class SubscriberCallback:
         return avg_stats
 
     def add_profile_data_timeseries(self, data):
-        data['ts_visualize_entry'] = str(round(time.time()*1000))
+        data['ts_visualize_entry'] = time.time()*1000
         self.logger.info(f'Original timeseries is: {data}')
         timeseries_stats = SubscriberCallback.prepare_timeseries_stats(data)
         avg_timeseries_stats = \
@@ -478,7 +478,7 @@ class SubscriberCallback:
         return data
 
     def add_profile_data(self, data):
-        data['ts_visualize_entry'] = str(round(time.time()*1000))
+        data['ts_visualize_entry'] = time.time()*1000
         per_frame_stats = SubscriberCallback.prepare_per_frame_stats(data)
         avg_value = self.prepare_avg_stats(per_frame_stats)
 
