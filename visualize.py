@@ -695,11 +695,9 @@ def main(args):
 
             while True:
                 buttonCount = 0
-                for key1 in queueDict:
-                    try:
-                        if not queueDict[key1].empty():
-                            frame = queueDict[key1].get_nowait()
-
+                for key in queueDict:
+                    if not queueDict[key].empty():
+                        frame = queueDict[key].get_nowait()
                         img = Image.fromarray(frame)
                         blue, green, red = img.split()
                         img = Image.merge("RGB", (red, green, blue))
@@ -725,7 +723,7 @@ def main(args):
                             image=imageDict["button" +
                                             str(buttonCount)],
                             compound=BOTTOM)
-                    except Exception:
+                    else:
                         try:
                             buttonDict[str(buttonCount)].config(
                                 image=imageDict["button" +
