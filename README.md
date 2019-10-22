@@ -14,14 +14,16 @@ Simple visualizer for the EIS platform.
     $ docker-compose up --build ia_visualizer
   ```
 
-  > **NOTE**:
-  > 1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
-  > 2. The user has to make sure the path provided in docker-compose volumes of visualizer correlates to the one in etcd before running visualizer if he wishes to save images.
-  > 3. Run this command in terminal if you run into tkinter couldn't connect to display exception
+-----
+**NOTE**:
+1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
+2. The user has to make sure the path provided in docker-compose volumes of visualizer correlates to the one in etcd before running visualizer if he wishes to save images.
+3. Run this command in terminal if you run into tkinter couldn't connect to display exception
 
-    ```sh
-    $ xhost +
-    ```
+   ```sh
+   $ xhost +
+   ```
+-----
 
 * If one needs to remove the classified images on a periodic basis:
 
