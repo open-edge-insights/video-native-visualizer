@@ -240,7 +240,7 @@ class SubscriberCallback:
                     self.logger.info(f'Classifier_results: {results}')
             else:
                 if self.profiling is True:
-                    self.add_profile_data(data)
+                    self.add_profile_data_timeseries(data)
                 self.logger.info(f'Classifier_results: {data}')
 
     @staticmethod
