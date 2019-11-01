@@ -50,16 +50,11 @@ FROM ia_common:$EIS_VERSION as common
 
 FROM eisbase
 
-COPY --from=common /libs ${PY_WORK_DIR}/libs
-COPY --from=common /util ${PY_WORK_DIR}/util
-
-RUN cd ./libs/EISMessageBus && \
-    rm -rf build deps && \
-    mkdir build && \
-    cd build && \
-    cmake -DWITH_PYTHON=ON .. && \
-    make && \
-    make install
+COPY --from=common ${GO_WORK_DIR}/common/libs ${PY_WORK_DIR}/libs
+COPY --from=common ${GO_WORK_DIR}/common/util ${PY_WORK_DIR}/util
+COPY --from=common ${GO_WORK_DIR}/common/cmake ${PY_WORK_DIR}/common/cmake
+COPY --from=common /usr/local/lib /usr/local/lib
+COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python3.6/dist-packages
 
 COPY visualize.py .
 
