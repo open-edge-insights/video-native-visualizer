@@ -116,7 +116,7 @@ class SubscriberCallback:
 
         height = int(results['height'])
         width = int(results['width'])
-        channels = int(results['channel'])
+        channels = int(results['channels'])
         encoding = None
 
         if 'encoding_type' and 'encoding_level' in results:
