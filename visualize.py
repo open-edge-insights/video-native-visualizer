@@ -231,6 +231,9 @@ class SubscriberCallback:
 
                 results, frame = self.draw_defect(metadata, blob, topic)
 
+                if 'gva_meta' in metadata:
+                    self.logger.info(f'Metadata is : {metadata}')
+
                 if self.save_image:
                     self.save_images(topic, results, frame)
 
@@ -693,7 +696,10 @@ def main(args):
                     if not queueDict[key].empty():
                         frame = queueDict[key].get_nowait()
                         img = Image.fromarray(frame)
-                        blue, green, red = img.split()
+                        if len(img.split()) > 3:
+                            blue, green, red, a = img.split()
+                        else:
+                            blue, green, red = img.split()
                         img = Image.merge("RGB", (red, green, blue))
                         imgwidth, imgheight = img.size
 
