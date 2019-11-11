@@ -723,6 +723,7 @@ def main(args):
                             image=imageDict["button" +
                                             str(buttonCount)],
                             compound=BOTTOM)
+                        del resized_img
                     else:
                         try:
                             buttonDict[str(buttonCount)].config(
