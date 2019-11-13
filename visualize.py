@@ -113,7 +113,6 @@ class SubscriberCallback:
         :return: Return classified results(metadata and frame)
         :rtype: dict and numpy array
         """
-
         height = int(results['height'])
         width = int(results['width'])
         channels = int(results['channels'])
@@ -137,8 +136,11 @@ class SubscriberCallback:
 
         # Draw defects
         if 'defects' in results:
-            results['defects'] = json.loads(results['defects'])
             for d in results['defects']:
+                d['tl'][0] = int(d['tl'][0])
+                d['tl'][1] = int(d['tl'][1])
+                d['br'][0] = int(d['br'][0])
+                d['br'][1] = int(d['br'][1])
                 # Get tuples for top-left and bottom-right coordinates
                 tl = tuple(d['tl'])
                 br = tuple(d['br'])

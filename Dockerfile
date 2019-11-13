@@ -46,6 +46,12 @@ RUN git clone https://github.com/kragniz/python-etcd3 && \
 
 ENV PYTHONPATH ${PY_WORK_DIR}/
 
+#Removing build dependencies
+RUN apt-get remove -y wget && \
+    apt-get remove -y git && \
+    apt-get remove curl && \
+    apt-get autoremove -y
+
 FROM ia_common:$EIS_VERSION as common
 
 FROM eisbase
@@ -57,11 +63,5 @@ COPY --from=common /usr/local/lib /usr/local/lib
 COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python3.6/dist-packages
 
 COPY visualize.py .
-
-#Removing build dependencies
-RUN apt-get remove -y wget && \
-    apt-get remove -y git && \
-    apt-get remove curl && \
-    apt-get autoremove -y
 
 ENTRYPOINT ["python3.6", "visualize.py"]
