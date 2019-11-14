@@ -134,6 +134,31 @@ class SubscriberCallback:
             self.logger.info("Encoding not enabled...")
             frame = np.reshape(frame, (height, width, channels))
 
+        # Draw defects for Gva
+        if results['gva_meta'] is not None:
+            if 'gva_meta' in results:
+                c = 0
+                for d in results['gva_meta']:
+                    x1 = d['x']
+                    y1 = d['y']
+                    x2 = x1 + d['width']
+                    y2 = y1 + d['height']
+
+                    tl = tuple([x1,y1])
+                    br = tuple([x2,y2])
+
+                    # Draw bounding box
+                    cv2.rectangle(frame, tl, br, self.bad_color, 2)
+
+                    # Draw labels
+                    for l in d['tensor']:
+                        if l['label'] is not None:
+                            pos = (x1, y1 - c)
+                            c += 20
+                            label = l['label']
+                            cv2.putText(frame, label, pos, cv2.FONT_HERSHEY_DUPLEX,
+                                    0.75, self.bad_color, 2, cv2.LINE_AA)
+
         # Draw defects
         if 'defects' in results:
             for d in results['defects']:
