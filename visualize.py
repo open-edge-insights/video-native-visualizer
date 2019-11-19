@@ -57,21 +57,7 @@ class SubscriberCallback:
 
         self.curr_frame = 0
 
-        self.vi_diff = 0.0
-        self.vi_filter_diff = 0.0
         self.vi_filter_input_queue_wait = 0.0
-        self.vi_filter_output_queue_wait = 0.0
-        self.vi_internal_wait_in_queues = 0.0
-        self.vi_encode = 0.0
-        self.ts_vi_queue_wait = 0.0
-        self.vi_to_va = 0.0
-
-        self.va_diff = 0.0
-        self.va_classify_diff = 0.0
-        self.va_classify_input_queue_wait = 0.0
-        self.va_classify_output_queue_wait = 0.0
-        self.va_internal_queue_wait = 0.0
-        self.va_to_vs = 0.0
         self.e2e = 0.0
 
         self.timeseries_points = 0
@@ -321,178 +307,27 @@ class SubscriberCallback:
 
     @staticmethod
     def prepare_per_frame_stats(results):
-
         per_frame_stats = dict()
-
-        vi_diff = results['ts_vi_exit'] - results['ts_vi_entry']
-
-        filter_stats = ['ts_vi_filter_entry', 'ts_vi_filter_exit']
-        check = all(stat_info in results for stat_info in filter_stats)
-
-        if check is True:
-            vi_filter_diff = results['ts_vi_filter_exit'] - \
-                results['ts_vi_filter_entry']
-
-            vi_filter_input_queue_wait = results['ts_vi_filter_entry'] - \
-                results['ts_vi_entry']
-
-            vi_filter_output_queue_wait = results['ts_vi_exit'] - \
-                results['ts_vi_filter_exit']
-
-            vi_internal_wait_in_queues = vi_filter_input_queue_wait + \
-                vi_filter_output_queue_wait
-
-        vi_encode = results['ts_vi_encode_end'] - \
-            results['ts_vi_encode_start']
-
-        vi_to_va = results['ts_va_entry'] - results['ts_vi_exit']
-
-        va_diff = results['ts_va_exit'] - results['ts_va_entry']
-        va_classify_diff = results['ts_va_classify_exit'] - \
-            results['ts_va_classify_entry']
-
-        va_classify_input_queue_wait = results['ts_va_classify_entry'] - \
-            results['ts_va_entry']
-
-        va_classify_output_queue_wait = results['ts_va_exit'] - \
-            results['ts_va_classify_exit']
-
-        va_internal_queue_wait = va_classify_input_queue_wait + \
-            va_classify_output_queue_wait
-
-        va_to_vs = results['ts_visualize_entry'] - \
-            results['ts_va_exit']
-
-        e2e = results['ts_visualize_entry'] - results['ts_vi_entry']
-
-        per_frame_stats['vi_diff'] = vi_diff
-
-        if check is True:
-            per_frame_stats['vi_filter_diff'] = vi_filter_diff
-            per_frame_stats['vi_filter_input_queue_wait'] = \
-                vi_filter_input_queue_wait
-            per_frame_stats['vi_filter_output_queue_wait'] = \
-                vi_filter_output_queue_wait
-            per_frame_stats['vi_internal_wait_in_queues'] = \
-                vi_internal_wait_in_queues
-
-        per_frame_stats['vi_encode'] = vi_encode
-        per_frame_stats['ts_vi_queue_wait'] = results['ts_vi_queue_wait']
-        per_frame_stats['vi_to_va'] = vi_to_va
-
-        per_frame_stats['va_diff'] = va_diff
-        per_frame_stats['va_classify_diff'] = va_classify_diff
-        per_frame_stats['va_classify_input_queue_wait'] = \
-            va_classify_input_queue_wait
-        per_frame_stats['va_classify_output_queue_wait'] = \
-            va_classify_output_queue_wait
-        per_frame_stats['va_internal_queue_wait'] = \
-            va_internal_queue_wait
-        per_frame_stats['va_to_vs'] = va_to_vs
-        per_frame_stats['e2e'] = e2e
-
+        vi_filter_input_queue_wait = results["ts_filterQ_exit"] - results["ts_filterQ_entry"]
+        vi_filter_input_queue_wait = vi_filter_input_queue_wait/1000
+        e2e = results["ts_visualize_entry"] - results["ts_Ingestor_entry"]
+        e2e = e2e/1000
+        per_frame_stats['vi_filter_input_queue_wait'] = vi_filter_input_queue_wait
+        per_frame_stats["e2e"] = e2e
         return per_frame_stats
 
     def prepare_avg_stats(self, per_frame_stats):
         self.curr_frame = self.curr_frame + 1
+        self.vi_filter_input_queue_wait += per_frame_stats['vi_filter_input_queue_wait']
+        avg_vi_filter_input_queue_wait = self.vi_filter_input_queue_wait / self.curr_frame
 
-        filter_stats = ['vi_filter_diff', 'vi_filter_input_queue_wait',
-                        'vi_filter_output_queue_wait',
-                        'vi_internal_wait_in_queues']
-
-        check = all(stat_info in filter_stats for stat_info in per_frame_stats)
-
-        if check is True:
-            self.vi_filter_diff += per_frame_stats['vi_filter_diff']
-            avg_vi_filter_diff = self.vi_filter_diff / self.curr_frame
-
-            self.vi_filter_input_queue_wait += \
-                per_frame_stats['vi_filter_input_queue_wait']
-
-            avg_vi_filter_input_queue_wait = \
-                self.vi_filter_input_queue_wait / self.curr_frame
-
-            self.vi_filter_output_queue_wait += \
-                per_frame_stats['vi_filter_output_queue_wait']
-
-            avg_vi_filter_output_queue_wait = \
-                self.vi_filter_output_queue_wait / self.curr_frame
-
-            self.vi_internal_wait_in_queues += \
-                per_frame_stats['vi_internal_wait_in_queues']
-
-            avg_vi_internal_wait_in_queues = \
-                self.vi_internal_wait_in_queues / self.curr_frame
-
-        self.vi_diff += per_frame_stats['vi_diff']
-        avg_vi_diff = self.vi_diff / self.curr_frame
-
-        self.vi_encode += per_frame_stats['vi_encode']
-        avg_vi_encode = self.vi_encode / self.curr_frame
-
-        self.ts_vi_queue_wait += per_frame_stats['ts_vi_queue_wait']
-        avg_ts_vi_queue_wait = self.ts_vi_queue_wait / self.curr_frame
-
-        self.vi_to_va += per_frame_stats['vi_to_va']
-        avg_vi_to_va = self.vi_to_va / self.curr_frame
-
-        self.va_diff += per_frame_stats['va_diff']
-        avg_va_diff = self.va_diff / self.curr_frame
-
-        self.va_classify_diff += per_frame_stats['va_classify_diff']
-        avg_va_classify_diff = self.va_classify_diff / self.curr_frame
-
-        self.va_classify_input_queue_wait += \
-            per_frame_stats['va_classify_input_queue_wait']
-
-        avg_va_classify_input_queue_wait = \
-            self.va_classify_input_queue_wait / self.curr_frame
-
-        self.va_classify_output_queue_wait += \
-            per_frame_stats['va_classify_output_queue_wait']
-
-        avg_va_classify_output_queue_wait = \
-            self.va_classify_output_queue_wait / self.curr_frame
-
-        self.va_internal_queue_wait += \
-            per_frame_stats['va_internal_queue_wait']
-        avg_va_internal_queue_wait = \
-            self.va_internal_queue_wait / self.curr_frame
-
-        self.va_to_vs += per_frame_stats['va_to_vs']
-        avg_va_to_vs = self.va_to_vs / self.curr_frame
-
-        self.e2e += per_frame_stats['e2e']
+        
+        self.e2e += per_frame_stats["e2e"]
         avg_e2e = self.e2e / self.curr_frame
 
         avg_stats = dict()
-
-        avg_stats['avg_vi_diff'] = avg_vi_diff
-        if check is True:
-            avg_stats['avg_vi_filter_diff'] = avg_vi_filter_diff
-            avg_stats['avg_vi_filter_input_queue_wait'] = \
-                avg_vi_filter_input_queue_wait
-            avg_stats['avg_vi_filter_output_queue_wait'] = \
-                avg_vi_filter_output_queue_wait
-            avg_stats['avg_vi_internal_wait_in_queues'] = \
-                avg_vi_internal_wait_in_queues
-
-        avg_stats['avg_vi_encode'] = avg_vi_encode
-        avg_stats['avg_ts_vi_queue_wait'] = avg_ts_vi_queue_wait
-        avg_stats['avg_vi_to_va'] = avg_vi_to_va
-
-        avg_stats['avg_va_diff'] = avg_va_diff
-        avg_stats['avg_va_classify_diff'] = avg_va_classify_diff
-
-        avg_stats['avg_va_classify_input_queue_wait'] = \
-            avg_va_classify_input_queue_wait
-        avg_stats['avg_va_classify_output_queue_wait'] = \
-            avg_va_classify_output_queue_wait
-        avg_stats['avg_va_internal_queue_wait'] = \
-            avg_va_internal_queue_wait
-        avg_stats['avg_va_to_vs'] = avg_va_to_vs
-        avg_stats['avg_e2e'] = avg_e2e
-
+        avg_stats["avg_vi_filter_input_queue_wait"] = avg_vi_filter_input_queue_wait
+        avg_stats["avg_e2e"] = avg_e2e
         return avg_stats
 
     def add_profile_data_timeseries(self, data):
@@ -508,14 +343,14 @@ class SubscriberCallback:
         return data
 
     def add_profile_data(self, data):
-        data['ts_visualize_entry'] = time.time()*1000
+        data['ts_visualize_entry'] = time.time()*1000000
         per_frame_stats = SubscriberCallback.prepare_per_frame_stats(data)
         avg_value = self.prepare_avg_stats(per_frame_stats)
 
         self.logger.info(f'==========STATS START==========')
         self.logger.info(f'Original data is: {data}')
-        self.logger.info(f'Per frame stats: {per_frame_stats}')
-        self.logger.info(f'frame avg stats: {avg_value}')
+        self.logger.info(f'Per frame stats in miliseconds: {per_frame_stats}')
+        self.logger.info(f'frame avg stats in miliseconds: {avg_value}')
         self.logger.info(f'==========STATS END==========\n')
         return data
 
