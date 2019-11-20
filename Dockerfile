@@ -62,6 +62,6 @@ COPY --from=common ${GO_WORK_DIR}/common/cmake ${PY_WORK_DIR}/common/cmake
 COPY --from=common /usr/local/lib /usr/local/lib
 COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python3.6/dist-packages
 
-COPY visualize.py .
+COPY . .
 
-ENTRYPOINT ["python3.6", "visualize.py"]
+ENTRYPOINT ["python3.6", "visualize.py", "-l"]

@@ -49,15 +49,33 @@ Simple visualizer for the EIS platform.
       "1": "SHORT"
   }
   ```
-  > **NOTE:** These labels are the mapping for the PCB demo provided in IEI.
+  > **NOTE:** These labels are the mapping for the PCB demo provided in EIS's visualizer directory. Currently pcb_demo_label.json and safety_demo_label.json files are provided for reference.
 
   An important thing to note above, is that the keys need to still be strings.
   The visualizer will take care of the conversion when it receives publications
   for classification results.
 
-  Assuming you saved the above JSON file as `labels.json`, run the visualizer
-  as follows:
+  In case the user running visualizer as a docker container, the visualizer section in [docker-compose.yml](../docker_setup/docker-compose.yml) file should be changed in order to process the labels from a specific JSON file. The ***command*** variable in docker-compose.yml file can be changed as below for using safety_demo_label.json instead of default json file:
+  
 
-  ```sh
-    $ python3.6 visualize.py --labels labels.json -i ./test
+  Before
+  ```json
+  ia_visualizer:
+  depends_on:
+    - ia_common
+  -----snip-----
+  command: ["pcb_demo_label.json"]
+  -----snip-----
+
   ```
+  After
+  ```json
+  ia_visualizer:
+  depends_on:
+  - ia_common
+  -----snip-----
+  command: ["safety_demo_label.json"]
+  -----snip-----
+  ```
+
+Passing this json file as command line option has been taken care in corrsponding Docker file.
