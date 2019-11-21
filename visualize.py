@@ -151,12 +151,13 @@ class SubscriberCallback:
 
                 # Draw labels
                 for l in d['tensor']:
-                    if l['label'] is not None:
+                    if l['label_id'] is not None:
                         pos = (x1, y1 - c)
-                        c += 20
-                        label = l['label']
+                        c += 10
+                        self.logger.info(self.labels)
+                        label = self.labels[str(l['label_id'])]
                         cv2.putText(frame, label, pos, cv2.FONT_HERSHEY_DUPLEX,
-                                0.75, self.bad_color, 2, cv2.LINE_AA)
+                                0.5, self.bad_color, 2, cv2.LINE_AA)
 
         # Draw defects
         if 'defects' in results:
