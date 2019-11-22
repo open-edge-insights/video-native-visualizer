@@ -154,7 +154,6 @@ class SubscriberCallback:
                     if l['label_id'] is not None:
                         pos = (x1, y1 - c)
                         c += 10
-                        self.logger.info(self.labels)
                         label = self.labels[str(l['label_id'])]
                         cv2.putText(frame, label, pos, cv2.FONT_HERSHEY_DUPLEX,
                                 0.5, self.bad_color, 2, cv2.LINE_AA)
