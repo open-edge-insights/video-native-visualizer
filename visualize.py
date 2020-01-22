@@ -40,15 +40,15 @@ from util.msgbusutil import MsgBusUtil
 import eis.msgbus as mb
 from util.log import configure_logging, LOG_LEVELS
 
+
 class SubscriberCallback:
     """Object for the databus callback to wrap needed state variables for the
     callback in to EIS.
     """
 
     def __init__(self, topicQueueDict, logger, profiling,
-                 labels=None, good_color=(0, 255, 0),
-                 bad_color=(0, 0, 255), dir_name=None,
-                 save_image=False, display=None):
+                 good_color=(0, 255, 0), bad_color=(0, 0, 255), dir_name=None,
+                 save_image=False, display=None, labels=None):
         """Constructor
 
         :param frame_queue: Queue to put frames in as they become available
@@ -106,7 +106,7 @@ class SubscriberCallback:
                 else:
                     self.logger.warning("Dropping frames as the queue is full")
 
-    def draw_defect(self, results, blob, topic):
+    def draw_defect(self, results, blob, topic, stream_label):
         """Identify the defects and draw boxes on the frames
 
         :param results: Metadata of frame received from message bus.
@@ -120,6 +120,7 @@ class SubscriberCallback:
         :return: Return classified results(metadata and frame)
         :rtype: dict and numpy array
         """
+
         height = int(results['height'])
         width = int(results['width'])
         channels = int(results['channels'])
@@ -150,8 +151,8 @@ class SubscriberCallback:
                 x2 = x1 + d['width']
                 y2 = y1 + d['height']
 
-                tl = tuple([x1,y1])
-                br = tuple([x2,y2])
+                tl = tuple([x1, y1])
+                br = tuple([x2, y2])
 
                 # Draw bounding box
                 cv2.rectangle(frame, tl, br, self.bad_color, 2)
@@ -161,12 +162,15 @@ class SubscriberCallback:
                     if l['label_id'] is not None:
                         pos = (x1, y1 - c)
                         c += 10
-                        if str(l['label_id']) in self.labels:
-                            label = self.labels[str(l['label_id'])]
-                            cv2.putText(frame, label, pos, cv2.FONT_HERSHEY_DUPLEX,
-                                    0.5, self.bad_color, 2, cv2.LINE_AA)
+                        if stream_label is not None and \
+                           str(l['label_id']) in stream_label:
+                            label = stream_label[str(l['label_id'])]
+                            cv2.putText(frame, label, pos,
+                                        cv2.FONT_HERSHEY_DUPLEX, 0.5,
+                                        self.bad_color, 2, cv2.LINE_AA)
                         else:
-                            self.logger.error("Label id:{} not found".format(l['label_id']))
+                            self.logger.error("Label id:{} not found".
+                                              format(l['label_id']))
 
         # Draw defects
         if 'defects' in results:
@@ -184,18 +188,19 @@ class SubscriberCallback:
                 cv2.rectangle(frame, tl, br, self.bad_color, 2)
 
                 # Draw labels for defects if given the mapping
-                if self.labels is not None:
+                if stream_label is not None:
                     # Position of the text below the bounding box
                     pos = (tl[0], br[1] + 20)
 
                     # The label is the "type" key of the defect, which
                     #  is converted to a string for getting from the labels
-                    if str(d['type']) in self.labels:
-                        label = self.labels[str(d['type'])]
+                    if str(d['type']) in stream_label:
+                        label = stream_label[str(d['type'])]
                         cv2.putText(frame, label, pos, cv2.FONT_HERSHEY_DUPLEX,
-                                0.5, self.bad_color, 2, cv2.LINE_AA)
+                                    0.5, self.bad_color, 2, cv2.LINE_AA)
                     else:
-                        self.logger.error("Label id:{} not found".format(d['type']))
+                        self.logger.error("Label id:{} not found".
+                                          format(d['type']))
 
             # Draw border around frame if has defects or no defects
             if results['defects']:
@@ -258,6 +263,12 @@ class SubscriberCallback:
 
         self.logger.debug(f'Initializing subscriber for topic \'{topic}\'')
         subscriber = msgbus.new_subscriber(topic)
+        stream_label = None
+
+        for key in self.labels:
+            if key == topic:
+                stream_label = self.labels[key]
+                break
 
         while True:
             data = subscriber.recv()
@@ -267,8 +278,8 @@ class SubscriberCallback:
 
                 if self.profiling is True:
                     self.add_profile_data(metadata)
-
-                results, frame = self.draw_defect(metadata, blob, topic)
+                results, frame = self.draw_defect(metadata, blob, topic,
+                                                  stream_label)
 
                 if 'gva_meta' in metadata:
                     self.logger.info(f'Metadata is : {metadata}')
@@ -334,25 +345,29 @@ class SubscriberCallback:
     @staticmethod
     def prepare_per_frame_stats(results):
         per_frame_stats = dict()
-        vi_filter_input_queue_wait = results["ts_filterQ_exit"] - results["ts_filterQ_entry"]
+        vi_filter_input_queue_wait = \
+            results["ts_filterQ_exit"] - results["ts_filterQ_entry"]
         vi_filter_input_queue_wait = vi_filter_input_queue_wait/1000
         e2e = results["ts_visualize_entry"] - results["ts_Ingestor_entry"]
         e2e = e2e/1000
-        per_frame_stats['vi_filter_input_queue_wait'] = vi_filter_input_queue_wait
+        per_frame_stats['vi_filter_input_queue_wait'] = \
+            vi_filter_input_queue_wait
         per_frame_stats["e2e"] = e2e
         return per_frame_stats
 
     def prepare_avg_stats(self, per_frame_stats):
         self.curr_frame = self.curr_frame + 1
-        self.vi_filter_input_queue_wait += per_frame_stats['vi_filter_input_queue_wait']
-        avg_vi_filter_input_queue_wait = self.vi_filter_input_queue_wait / self.curr_frame
+        self.vi_filter_input_queue_wait += \
+            per_frame_stats['vi_filter_input_queue_wait']
+        avg_vi_filter_input_queue_wait = \
+            self.vi_filter_input_queue_wait / self.curr_frame
 
-        
         self.e2e += per_frame_stats["e2e"]
         avg_e2e = self.e2e / self.curr_frame
 
         avg_stats = dict()
-        avg_stats["avg_vi_filter_input_queue_wait"] = avg_vi_filter_input_queue_wait
+        avg_stats["avg_vi_filter_input_queue_wait"] = \
+            avg_vi_filter_input_queue_wait
         avg_stats["avg_e2e"] = avg_e2e
         return avg_stats
 
@@ -388,9 +403,6 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument('-f', '--fullscreen', default=False, action='store_true',
                     help='Start visualizer in fullscreen mode')
-    ap.add_argument('-l', '--labels', default=None,
-                    help='JSON file mapping the defect type to labels')
-
     return ap.parse_args()
 
 
@@ -421,14 +433,15 @@ def assert_exists(path):
 
 
 def msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
-                       labels, profiling):
+                       profiling):
     """msg_bus_subscriber is the ZeroMQ callback to
     subscribe to classified results
     """
     sc = SubscriberCallback(queueDict, logger, profiling,
-                            labels=labels, dir_name=os.environ["IMAGE_DIR"],
+                            dir_name=os.environ["IMAGE_DIR"],
                             save_image=jsonConfig["save_image"],
-                            display=jsonConfig["display"])
+                            display=jsonConfig["display"],
+                            labels=jsonConfig["labels"])
 
     for topic_config in topic_config_list:
         topic, msgbus_cfg = topic_config
@@ -446,23 +459,14 @@ def main(args):
 
     app_name = os.environ["AppName"]
     conf = Util.get_crypto_dict(app_name)
-        
     cfg_mgr = ConfigManager()
     config_client = cfg_mgr.get_config_client("etcd", conf)
 
     logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
-                               __name__,dev_mode)
+                               __name__, dev_mode)
 
     app_name = os.environ["AppName"]
     window_name = 'EIS Visualizer App'
-
-    # If user provides labels, read them in
-    if args.labels is not None:
-        assert_exists(args.labels)
-        with open(args.labels, 'r') as f:
-            labels = json.load(f)
-    else:
-        labels = None
 
     visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
     jsonConfig = json.loads(visualizerConfig)
@@ -478,10 +482,6 @@ def main(args):
 
     queueDict = {}
 
-    if not dev_mode and jsonConfig["cert_path"] is None:
-        logger.error("Kindly Provide certificate directory in etcd config"
-                     " when security mode is True")
-        sys.exit(1)
     topic_config_list = []
     for topic in topicsList:
         publisher, topic = topic.split("/")
@@ -576,7 +576,7 @@ def main(args):
 
             rootWin.update()
             msg_bus_subscriber(topic_config_list, queueDict, logger,
-                               jsonConfig, labels, profiling)
+                               jsonConfig, profiling)
 
             while True:
                 buttonCount = 0
@@ -631,7 +631,7 @@ def main(args):
             os._exit(1)
     elif jsonConfig["display"].lower() == 'false':
         msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
-                           labels, profiling)
+                           profiling)
 
 
 if __name__ == '__main__':

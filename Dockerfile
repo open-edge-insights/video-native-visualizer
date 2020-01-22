@@ -64,4 +64,4 @@ COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python
 
 COPY . .
 
-ENTRYPOINT ["python3.6", "visualize.py", "-l"]
+ENTRYPOINT ["python3.6", "visualize.py"]
