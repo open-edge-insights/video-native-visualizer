@@ -8,7 +8,7 @@ Simple visualizer for the EIS platform.
 * Follow [provision/README.md](../README#provision-eis.md) for EIS provisioning
   if not done already as part of EIS stack setup
 
-* Running visualizer as a container from [docker_setup](../../docker_setup):
+* Running visualizer as a container from [build](../../build):
 
   ```
     $ docker-compose up --build ia_visualizer
@@ -80,15 +80,15 @@ A) For Ingestor's **Non-GVA** type, metadata structure sample is :
 {
  'channels': 3,
  'encoding_type': 'jpeg',
- 'height': 1200, 
+ 'height': 1200,
 
  'defects': [
      {'type': 0, 'tl': [1019, 644], 'br': [1063, 700]},
      {'type': 0, 'tl': [1297, 758], 'br': [1349, 796]}
-    ], 
+    ],
 
 'display_info': [{'info':'good', 'priority':0}],
- 
+
 'img_handle': '348151d424',
 'width': 1920,
 'encoding_level': 95
@@ -99,7 +99,7 @@ where in `defects` and `display_info` is a list of dicts.
 
 Each entry in `defects` list is a dictionary that should contain following keys:
 * `type` : value given to type will be the label id
-* `tl` : value is the top-left `x` and `y` co-ordinate of the defect in the image. 
+* `tl` : value is the top-left `x` and `y` co-ordinate of the defect in the image.
 * `br` : value is the bottom-right `x` and `y` co-ordinate of the defect in the image.
 
 Each entry in `display_info` list is a dictionary that should contain following keys:
@@ -114,19 +114,19 @@ B) For Ingestor's **GVA** type, metadata structure sample is :
 
 ```json
 {
-    'channels': 3, 
+    'channels': 3,
     'gva_meta': [
 
-        {'x': 1047, 'height': 86, 'y': 387, 'width': 105, 'tensor': [{'label': '', 'label_id': 1, 'confidence':0.8094226121902466, 'attribute':'detection'}]}, 
+        {'x': 1047, 'height': 86, 'y': 387, 'width': 105, 'tensor': [{'label': '', 'label_id': 1, 'confidence':0.8094226121902466, 'attribute':'detection'}]},
 
         {'x': 1009, 'height': 341, 'y': 530, 'width': 176, 'tensor': [{'label': '', 'label_id': 2, 'confidence': 0.9699158668518066, 'attribute': 'detection'}]}
 
-        ], 
+        ],
 
-    'encoding_type': 'jpeg', 
-    'height': 1080, 
-    'img_handle': '7247149a0d', 
-    'width': 1920, 
+    'encoding_type': 'jpeg',
+    'height': 1080,
+    'img_handle': '7247149a0d',
+    'width': 1920,
     'encoding_level': 95
 }
 
