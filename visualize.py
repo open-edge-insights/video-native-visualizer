@@ -271,11 +271,9 @@ class SubscriberCallback:
                 break
 
         while True:
-            data = subscriber.recv()
+            metadata, blob = subscriber.recv()
 
-            if isinstance(data, (list, tuple, )):
-                metadata, blob = data
-
+            if metadata is not None and blob is not None:
                 if self.profiling is True:
                     self.add_profile_data(metadata)
                 results, frame = self.draw_defect(metadata, blob, topic,
