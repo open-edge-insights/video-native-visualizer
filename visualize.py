@@ -125,7 +125,6 @@ class SubscriberCallback:
         width = int(results['width'])
         channels = int(results['channels'])
         encoding = None
-
         if 'encoding_type' and 'encoding_level' in results:
             encoding = {"type": results['encoding_type'],
                         "level": results['encoding_level']}
@@ -199,8 +198,9 @@ class SubscriberCallback:
                         cv2.putText(frame, label, pos, cv2.FONT_HERSHEY_DUPLEX,
                                     0.5, self.bad_color, 2, cv2.LINE_AA)
                     else:
-                        self.logger.error("Label id:{} not found".
-                                          format(d['type']))
+                        cv2.putText(frame, str(d['type']), pos,
+                                    cv2.FONT_HERSHEY_DUPLEX, 0.5,
+                                    self.bad_color, 2, cv2.LINE_AA)
 
             # Draw border around frame if has defects or no defects
             if results['defects']:
@@ -214,7 +214,6 @@ class SubscriberCallback:
         # Display information about frame
         (dx, dy) = (20, 10)
         if 'display_info' in results:
-            results['display_info'] = json.loads(results['display_info'])
             for d_i in results['display_info']:
                 # Get priority
                 priority = d_i['priority']
