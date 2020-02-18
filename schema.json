@@ -1,0 +1,23 @@
+{
+  "definitions": {},
+  "type": "object",
+  "required": [
+    "display",
+    "save_image",
+    "cert_path"
+  ],
+  "properties": {
+    "display": {
+      "type": "string",
+      "pattern": "^(.*)$"
+    },
+    "save_image": {
+      "type": "string",
+      "pattern": "^(.*)$"
+    },
+    "cert_path": {
+      "type": "string",
+      "pattern": "^(.*)$"
+    }
+  }
+}

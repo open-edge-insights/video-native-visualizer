@@ -479,6 +479,11 @@ def main(args):
     window_name = 'EIS Visualizer App'
 
     visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
+    # Validating config against schema
+    with open('./schema.json', "rb") as infile:
+        schema = infile.read()
+        if (Util.validate_json(schema, visualizerConfig)) is not True:
+            sys.exit(1)
     jsonConfig = json.loads(visualizerConfig)
     image_dir = os.environ["IMAGE_DIR"]
     profiling = bool(strtobool(os.environ["PROFILING_MODE"]))
