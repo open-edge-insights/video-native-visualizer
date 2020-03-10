@@ -103,6 +103,7 @@ class SubscriberCallback:
             if (key == topic):
                 if not self.topicQueueDict[key].full():
                     self.topicQueueDict[key].put_nowait(frame)
+                    del frame
                 else:
                     self.logger.warning("Dropping frames as the queue is full")
 
@@ -452,8 +453,8 @@ def main(args):
     """Main method.
     """
     dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
-    # Initializing Etcd to set env variables
 
+    # Initializing Etcd to set env variables
     app_name = os.environ["AppName"]
     conf = Util.get_crypto_dict(app_name)
     cfg_mgr = ConfigManager()
@@ -581,6 +582,7 @@ def main(args):
                     if not queueDict[key].empty():
                         frame = queueDict[key].get_nowait()
                         img = Image.fromarray(frame)
+                        del frame
                         if len(img.split()) > 3:
                             blue, green, red, a = img.split()
                         else:
@@ -598,6 +600,7 @@ def main(args):
 
                         resized_img = img.resize((resized_width,
                                                   resized_height))
+                        del img
 
                         imageDict[
                             "button"+str(
@@ -608,6 +611,7 @@ def main(args):
                             image=imageDict["button" +
                                             str(buttonCount)],
                             compound=BOTTOM)
+
                         del resized_img
                     else:
                         try:
