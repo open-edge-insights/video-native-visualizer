@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Intel Corporation.
+# Copyright (c) 2020 Intel Corporation.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -212,8 +212,20 @@ class SubscriberCallback:
             frame = cv2.copyMakeBorder(frame, 5, 5, 5, 5, cv2.BORDER_CONSTANT,
                                        value=outline_color)
 
+        # Display information about frame FPS
+        x = 20
+        y = 20
+        for res in results:
+            if "Fps" in res:
+                fps_str = "{} : {}".format(str(res), str(results[res]))
+                self.logger.debug(fps_str)
+                cv2.putText(frame, fps_str, (x, y),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.5,
+                            self.good_color, 1, cv2.LINE_AA)
+                y = y + 20
+
         # Display information about frame
-        (dx, dy) = (20, 10)
+        (dx, dy) = (20, 50)
         if 'display_info' in results:
             for d_i in results['display_info']:
                 # Get priority
