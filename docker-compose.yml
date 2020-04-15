@@ -17,16 +17,16 @@ services:
     container_name: ia_visualizer
     hostname: ia_visualizer
     network_mode: host
-    ipc: host
     restart: unless-stopped
-    command: ["pcb_demo_label.json"]
     environment:
       AppName: "Visualizer"
       DISPLAY: ":0"
       IMAGE_DIR: ${EIS_INSTALL_PATH}/saved_images
       DEV_MODE: ${DEV_MODE}
       PROFILING_MODE: ${PROFILING_MODE}
-      no_proxy: ${no_proxy}
+      no_proxy: ${eis_no_proxy},${ETCD_HOST}
+      ETCD_HOST: ${ETCD_HOST}
+      ETCD_PREFIX: ${ETCD_PREFIX}
 
       # MessageBus Endpoint Configuration
       CertType: "zmq"
@@ -47,6 +47,7 @@ services:
       - "${EIS_INSTALL_PATH}/saved_images:${EIS_INSTALL_PATH}/saved_images"
       - "/tmp/.X11-unix:/tmp/.X11-unix"
       - "vol_eis_socket:${SOCKET_DIR}"
+    user: ${EIS_UID}
     secrets:
       - ca_etcd
       - etcd_Visualizer_cert
