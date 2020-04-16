@@ -4,7 +4,7 @@
   "required": [
     "display",
     "save_image",
-    "cert_path"
+    "labels"
   ],
   "properties": {
     "display": {
@@ -15,9 +15,8 @@
       "type": "string",
       "pattern": "^(.*)$"
     },
-    "cert_path": {
-      "type": "string",
-      "pattern": "^(.*)$"
+    "labels": {
+      "type": "object"
     }
   }
 }

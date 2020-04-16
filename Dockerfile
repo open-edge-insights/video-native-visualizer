@@ -26,7 +26,7 @@ COPY --from=common ${GO_WORK_DIR}/common/cmake ${PY_WORK_DIR}/common/cmake
 COPY --from=common /usr/local/lib /usr/local/lib
 COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python3.6/dist-packages
 
-COPY visualize.py .
+COPY . .
 
 #Removing build dependencies
 RUN apt-get remove -y wget && \
