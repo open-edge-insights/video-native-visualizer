@@ -36,7 +36,7 @@ from PIL import Image, ImageTk
 import threading
 from eis.config_manager import ConfigManager
 from util.util import Util
-from util.msgbusutil import MsgBusUtil
+from eis.env_config import EnvConfig
 import eis.msgbus as mb
 from util.log import configure_logging, LOG_LEVELS
 
@@ -484,6 +484,7 @@ def main(args):
         schema = infile.read()
         if (Util.validate_json(schema, visualizerConfig)) is not True:
             sys.exit(1)
+
     jsonConfig = json.loads(visualizerConfig)
     image_dir = os.environ["IMAGE_DIR"]
     profiling = bool(strtobool(os.environ["PROFILING_MODE"]))
@@ -493,7 +494,7 @@ def main(args):
         if not os.path.exists(image_dir):
             os.mkdir(image_dir)
 
-    topicsList = MsgBusUtil.get_topics_from_env("sub")
+    topicsList = EnvConfig.get_topics_from_env("sub")
 
     queueDict = {}
 
@@ -502,7 +503,7 @@ def main(args):
         publisher, topic = topic.split("/")
         topic = topic.strip()
         queueDict[topic] = queue.Queue(maxsize=10)
-        msgbus_cfg = MsgBusUtil.get_messagebus_config(topic, "sub", publisher,
+        msgbus_cfg = EnvConfig.get_messagebus_config(topic, "sub", publisher,
                                                       config_client, dev_mode)
 
         mode_address = os.environ[topic + "_cfg"].split(",")
