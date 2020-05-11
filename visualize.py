@@ -29,16 +29,19 @@ import json
 import queue
 import logging
 import argparse
+import math
+import time
 import numpy as np
 from distutils.util import strtobool
-from tkinter import *
-from PIL import Image, ImageTk
 import threading
 from eis.config_manager import ConfigManager
 from util.util import Util
 from eis.env_config import EnvConfig
 import eis.msgbus as mb
 from util.log import configure_logging, LOG_LEVELS
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLayout
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 
 
 class SubscriberCallback:
@@ -121,11 +124,11 @@ class SubscriberCallback:
         :return: Return classified results(metadata and frame)
         :rtype: dict and numpy array
         """
-
         height = int(results['height'])
         width = int(results['width'])
         channels = int(results['channels'])
         encoding = None
+
         if 'encoding_type' and 'encoding_level' in results:
             encoding = {"type": results['encoding_type'],
                         "level": results['encoding_level']}
@@ -303,8 +306,8 @@ class SubscriberCallback:
                     self.logger.info(f'Classifier_results: {results}')
             else:
                 if self.profiling is True:
-                    self.add_profile_data_timeseries(data)
-                self.logger.info(f'Classifier_results: {data}')
+                    self.add_profile_data_timeseries(metadata)
+                self.logger.info(f'Classifier_results: {metadata}')
 
     @staticmethod
     def prepare_timeseries_stats(results):
@@ -406,255 +409,278 @@ class SubscriberCallback:
         return data
 
 
-def parse_args():
-    """Parse command line arguments.
-    """
-    ap = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    ap.add_argument('-f', '--fullscreen', default=False, action='store_true',
-                    help='Start visualizer in fullscreen mode')
-    return ap.parse_args()
+class Main(QThread):
+    changePixmap = pyqtSignal(list)
 
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.logger = None
+        self.topicsList = None
+        self.queueDict = None
+        self.grid_rows = None
+        self.grid_cols = None
+        self.init()
 
-def assert_exists(path):
-    """Assert given path exists.
+    @staticmethod
+    def assert_exists(path):
+        """Assert given path exists.
 
-    :param path: Path to assert
-    :type: str
-    """
-    assert os.path.exists(path), 'Path: {} does not exist'.format(path)
+        :param path: Path to assert
+        :type: str
+        """
+        assert os.path.exists(path), 'Path: {} does not exist'.format(path)
 
+    @staticmethod
+    def msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
+                           profiling):
+        """msg_bus_subscriber is the ZeroMQ callback to
+        subscribe to classified results
+        """
+        sc = SubscriberCallback(queueDict, logger, profiling,
+                                dir_name=os.environ["IMAGE_DIR"],
+                                save_image=jsonConfig["save_image"],
+                                display=jsonConfig["display"],
+                                labels=jsonConfig["labels"])
 
-# TODO: Enlarge individual frame on respective bnutton click
+        for topic_config in topic_config_list:
+            topic, msgbus_cfg = topic_config
 
-# def button_click(rootWin, frames, key):
-#     topRoot=Toplevel(rootWin)
-#     topRoot.title(key)
+            callback_thread = threading.Thread(target=sc.callback,
+                                               args=(msgbus_cfg, topic, ))
+            callback_thread.start()
 
-#     while True:
-#         frame=frames.get()
+    @staticmethod
+    def get_best_grid_size(n, max_ratio=None):
+        """Gives number of rows and columns for the
+        grid size.
 
-#         img=Image.fromarray(frame)
-#         image= ImageTk.PhotoImage(image=img)
+        :param n: Number of topics
+        :type: int
+        :param max_ratio: Ratio of columns:rows
+        :type: int
+        :return: Returns number of columns and rows to be displayed.
+        :rtype: int and int
+        """
+        cols, rows = 0, 0
+        i = int(math.sqrt(n))
+        while i > 0:
+            if n % i == 0:
+                rows = i
+                cols = n // rows
+                if max_ratio is not None and cols / rows > max_ratio:
+                    cols, rows = Main.get_best_grid_size(n + 1, max_ratio)
+                break
+            i -= 1
+        return cols, rows
 
-#         lbl=Label(topRoot,image=image)
-#         lbl.grid(row=0, column=0)
-#         topRoot.update()
+    def init(self):
+        QUEUE_SIZE = 10
+        dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
 
+        app_name = os.environ["AppName"]
+        conf = Util.get_crypto_dict(app_name)
 
-def msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
-                       profiling):
-    """msg_bus_subscriber is the ZeroMQ callback to
-    subscribe to classified results
-    """
-    sc = SubscriberCallback(queueDict, logger, profiling,
-                            dir_name=os.environ["IMAGE_DIR"],
-                            save_image=jsonConfig["save_image"],
-                            display=jsonConfig["display"],
-                            labels=jsonConfig["labels"])
+        cfg_mgr = ConfigManager()
+        config_client = cfg_mgr.get_config_client("etcd", conf)
 
-    for topic_config in topic_config_list:
-        topic, msgbus_cfg = topic_config
+        self.logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
+                                        __name__, dev_mode)
 
-        callback_thread = threading.Thread(target=sc.callback,
-                                           args=(msgbus_cfg, topic, ))
-        callback_thread.start()
+        app_name = os.environ["AppName"]
 
+        visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
+        with open('./schema.json', "rb") as infile:
+            schema = infile.read()
+            if (Util.validate_json(schema, visualizerConfig)) is not True:
+                sys.exit(1)
 
-def main(args):
-    """Main method.
-    """
-    dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
+        jsonConfig = json.loads(visualizerConfig)
+        image_dir = os.environ["IMAGE_DIR"]
+        profiling = bool(strtobool(os.environ["PROFILING_MODE"]))
 
-    # Initializing Etcd to set env variables
-    app_name = os.environ["AppName"]
-    conf = Util.get_crypto_dict(app_name)
-    cfg_mgr = ConfigManager()
-    config_client = cfg_mgr.get_config_client("etcd", conf)
+        # If user provides image_dir, create the directory if don't exists
+        if image_dir:
+            if not os.path.exists(image_dir):
+                os.mkdir(image_dir)
 
-    logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
-                               __name__, dev_mode)
+        self.topicsList = EnvConfig.get_topics_from_env("sub")
 
-    app_name = os.environ["AppName"]
-    window_name = 'EIS Visualizer App'
+        self.queueDict = {}
 
-    visualizerConfig = config_client.GetConfig("/" + app_name + "/config")
-    # Validating config against schema
-    with open('./schema.json', "rb") as infile:
-        schema = infile.read()
-        if (Util.validate_json(schema, visualizerConfig)) is not True:
-            sys.exit(1)
+        topic_config_list = []
+        for topic in self.topicsList:
+            publisher, topic = topic.split("/")
+            topic = topic.strip()
+            self.queueDict[topic] = queue.Queue(maxsize=QUEUE_SIZE)
+            msgbus_cfg = EnvConfig.get_messagebus_config(topic, "sub",
+                                                         publisher,
+                                                         config_client,
+                                                         dev_mode)
 
-    jsonConfig = json.loads(visualizerConfig)
-    image_dir = os.environ["IMAGE_DIR"]
-    profiling = bool(strtobool(os.environ["PROFILING_MODE"]))
+            mode_address = os.environ[topic + "_cfg"].split(",")
+            mode = mode_address[0].strip()
+            if (not dev_mode and mode == "zmq_tcp"):
+                for key in msgbus_cfg[topic]:
+                    if msgbus_cfg[topic][key] is None:
+                        raise ValueError("Invalid Config")
 
-    # If user provides image_dir, create the directory if don't exists
-    if image_dir:
-        if not os.path.exists(image_dir):
-            os.mkdir(image_dir)
+            topic_config = (topic, msgbus_cfg)
+            topic_config_list.append(topic_config)
 
-    topicsList = EnvConfig.get_topics_from_env("sub")
+        self.msg_bus_subscriber(topic_config_list, self.queueDict, self.logger,
+                                jsonConfig, profiling)
 
-    queueDict = {}
+        if jsonConfig["display"].lower() == "true":
+            self.grid_cols, self.grid_rows = \
+                self.get_best_grid_size(len(self.topicsList), 2)
 
-    topic_config_list = []
-    for topic in topicsList:
-        publisher, topic = topic.split("/")
-        topic = topic.strip()
-        queueDict[topic] = queue.Queue(maxsize=10)
-        msgbus_cfg = EnvConfig.get_messagebus_config(topic, "sub", publisher,
-                                                      config_client, dev_mode)
-
-        mode_address = os.environ[topic + "_cfg"].split(",")
-        mode = mode_address[0].strip()
-        if (not dev_mode and mode == "zmq_tcp"):
-            for key in msgbus_cfg[topic]:
-                if msgbus_cfg[topic][key] is None:
-                    raise ValueError("Invalid Config")
-
-        topic_config = (topic, msgbus_cfg)
-        topic_config_list.append(topic_config)
-
-    if jsonConfig["display"].lower() == 'true':
-
+    def run(self):
         try:
-            rootWin = Tk()
-            buttonDict = {}
-            imageDict = {}
-
-            WINDOW_WIDTH = 600
-            WINDOW_HEIGHT = 600
-            windowGeometry = str(WINDOW_WIDTH) + 'x' + str(WINDOW_HEIGHT)
-
-            rootWin.geometry(windowGeometry)
-            rootWin.title(window_name)
-
-            columnValue = len(topicsList)//2
-            rowValue = len(topicsList) % 2
-
-            heightValue = int(WINDOW_HEIGHT/(rowValue+1))
-            widthValue = int(WINDOW_WIDTH/(columnValue+1))
-
-            blankImageShape = (300, 300, 3)
-            blankImage = np.zeros(blankImageShape, dtype=np.uint8)
-
-            text = 'Disconnected'
-            textPosition = (20, 250)
-            textFont = cv2.FONT_HERSHEY_PLAIN
-            textColor = (255, 255, 255)
-
-            cv2.putText(blankImage, text, textPosition, textFont, 2,
-                        textColor, 2, cv2.LINE_AA)
-
-            blankimg = Image.fromarray(blankImage)
-
-            for buttonCount in range(len(topicsList)):
-                buttonStr = "button{}".format(buttonCount)
-                imageDict[buttonStr] = ImageTk.PhotoImage(image=blankimg)
-
-            buttonCount, rowCount, columnCount = 0, 0, 0
-            if(len(topicsList) == 1):
-                heightValue = WINDOW_HEIGHT
-                widthValue = WINDOW_WIDTH
-                topic_text = (topicsList[0].split("/"))[1]
-                buttonDict[str(buttonCount)] = Button(rootWin,
-                                                      text=topic_text)
-                buttonDict[str(buttonCount)].grid(sticky='NSEW')
-                Grid.rowconfigure(rootWin, 0, weight=1)
-                Grid.columnconfigure(rootWin, 0, weight=1)
-            else:
-                for key in queueDict:
-                    buttonDict[str(buttonCount)] = Button(rootWin, text=key)
-
-                    if(columnCount > columnValue):
-                        rowCount = rowCount+1
-                        columnCount = 0
-
-                    if rowCount > 0:
-                        heightValue = int(WINDOW_HEIGHT/(rowCount+1))
-                        for key2 in buttonDict:
-                            buttonDict[key2].config(height=heightValue,
-                                                    width=widthValue)
-                    else:
-                        for key2 in buttonDict:
-                            buttonDict[key2].config(height=heightValue,
-                                                    width=widthValue)
-
-                    buttonDict[str(buttonCount)].grid(row=rowCount,
-                                                      column=columnCount,
-                                                      sticky='NSEW')
-                    Grid.rowconfigure(rootWin, rowCount, weight=1)
-                    Grid.columnconfigure(rootWin, columnCount, weight=1)
-
-                    buttonCount = buttonCount + 1
-                    columnCount = columnCount + 1
-
-            rootWin.update()
-            msg_bus_subscriber(topic_config_list, queueDict, logger,
-                               jsonConfig, profiling)
+            # creating a numpy array filled with zeros (blank image)
+            blankImg = np.zeros((300, 300, 3), dtype=np.uint8)
+            imgList = [blankImg] * (self.grid_rows * self.grid_cols)
+            self.changePixmap.emit(imgList)
 
             while True:
-                buttonCount = 0
-                for key in queueDict:
-                    if not queueDict[key].empty():
-                        frame = queueDict[key].get_nowait()
-                        img = Image.fromarray(frame)
-                        del frame
-                        if len(img.split()) > 3:
-                            blue, green, red, a = img.split()
-                        else:
-                            blue, green, red = img.split()
-                        img = Image.merge("RGB", (red, green, blue))
-                        imgwidth, imgheight = img.size
+                imgList = [None] * (self.grid_cols * self.grid_rows)
+                new_frames = False
+                for i, key in enumerate(self.queueDict):
+                    if not self.queueDict[key].empty():
+                        imgList[i] = self.queueDict[key].get_nowait()
+                        new_frames = True
 
-                        aspect_ratio = (imgwidth/imgheight) + 0.1
+                if new_frames:
+                    self.changePixmap.emit(imgList)
 
-                        resized_width = buttonDict[
-                                        str(buttonCount)].winfo_width()
-
-                        resized_height = round(buttonDict[
-                                str(buttonCount)].winfo_width()/aspect_ratio)
-
-                        resized_img = img.resize((resized_width,
-                                                  resized_height))
-                        del img
-
-                        imageDict[
-                            "button"+str(
-                                buttonCount)] = ImageTk.PhotoImage(
-                                                            image=resized_img)
-
-                        buttonDict[str(buttonCount)].config(
-                            image=imageDict["button" +
-                                            str(buttonCount)],
-                            compound=BOTTOM)
-
-                        del resized_img
-                    else:
-                        try:
-                            buttonDict[str(buttonCount)].config(
-                                image=imageDict["button" +
-                                                str(buttonCount)],
-                                compound=BOTTOM)
-                        except Exception:
-                            logger.exception("Tkinter exception")
-                    buttonCount = buttonCount + 1
-                rootWin.update()
         except KeyboardInterrupt:
-            logger.info('Quitting...')
+            self.logger.info('Quitting...')
         except Exception:
-            logger.exception('Error during execution:')
+            self.logger.exception('Error during execution:')
         finally:
-            logger.exception('Destroying EIS databus context')
-            os._exit(1)
-    elif jsonConfig["display"].lower() == 'false':
-        msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
-                           profiling)
+            self.logger.exception('Destroying EIS databus context')
+            sys.exit(1)
+
+
+class AppWin(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.grid = None
+        self.labels = None
+        self.main = None
+        self.XPOS = 0
+        self.YPOS = 0
+        self.WINDOW_WIDTH = 600
+        self.WINDOW_HEIGHT = 600
+        self.prev_t = {}
+        self.curr_t = {}
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('EIS Visualizer App')
+        self.setGeometry(self.XPOS, self.YPOS, self.WINDOW_WIDTH,
+                         self.WINDOW_HEIGHT)
+        self.grid = QGridLayout()
+        self.grid.setSpacing(0)
+        self.grid.setContentsMargins(0, 0, 0, 0)
+        self.grid.setSizeConstraint(QLayout.SetNoConstraint)
+
+        self.main = Main(self)
+
+        self.labels = []
+        for i in range(self.main.grid_rows):
+            self.labels.append([])
+            for j in range(self.main.grid_cols):
+                label = QLabel()
+                label.setAlignment(Qt.AlignCenter)
+                self.labels[i].append(label)
+                self.grid.addWidget(label, i, j)
+        self.setLayout(self.grid)
+
+        self.main.changePixmap.connect(lambda imgList: self.change_image(
+                                       imgList))
+        self.main.start()
+
+    def process_img(self, img, text, width, height):
+
+        """This helps in processing the image like adjusting the size of
+        the image according to widget size and displaying the text on the
+        image widget.
+
+        :param img: Actual image which will be displayed.
+        :type: numpy.ndarray
+        :param text: Subscribed topic name will be the text.
+        :type: string
+        :param text: Subscribed topic name will be the text.
+        :type: string
+        :param width: width of the image that fits the ui widget.
+        :type: int
+        :param height: height of the image that fits the ui widget.
+        :type: int
+        :return: Returns the image with respect to pyQT version, i.e, Pixmap
+        :rtype: QPixmap pixmap
+        """
+
+        # Resize (preserve aspec ratio)
+        h, w, c = img.shape
+        aspect_ratio_img = w / h
+        aspect_ratio_box = width / height
+        if aspect_ratio_img > aspect_ratio_box:
+            new_w = width
+            new_h = h * (width / w)
+        else:
+            new_w = w * (height / h)
+            new_h = height
+        img = cv2.resize(img, (int(new_w), int(new_h)))
+        # Add text to image
+        h, w, c = img.shape
+        if text:
+            cv2.putText(img, text, (5, 10), cv2.FONT_HERSHEY_PLAIN, 0.75,
+                        (255, 255, 255), 1, cv2.LINE_AA)
+            if text in self.prev_t:
+                self.prev_t[text] = self.curr_t[text]
+                self.curr_t[text] = time.time()
+                fps = 1 / (self.curr_t[text] - self.prev_t[text])
+                cv2.putText(img, f"{fps:.1f} fps", (w-30, 10),
+                            cv2.FONT_HERSHEY_PLAIN, 0.75,  (255, 255, 255), 1,
+                            cv2.LINE_AA)
+            else:
+                self.prev_t[text] = time.time()
+                self.curr_t[text] = time.time()
+        # Use the correct format
+        if c == 1:
+            f = QImage.Format_Grayscale8
+        else:
+            f = QImage.Format_BGR888
+        if c == 4:
+            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+            c = 3
+        # Convert to Pixmap
+        return QPixmap.fromImage(QImage(img.data, w, h, w*c, f))
+
+    def change_image(self, imgList):
+        """Changes the image in respective widget (label window).
+
+        :param imgList: List of images that needs to be updated in respective
+         window.
+        :type imgList: list
+        """
+        w = self.width() // self.grid.columnCount()
+        h = self.height() // self.grid.rowCount()
+        i = 0
+        for r in range(self.grid.rowCount()):
+            for c in range(self.grid.columnCount()):
+                if imgList[i] is not None:
+                    text = ''
+                    if i < len(self.main.topicsList):
+                        text = self.main.topicsList[i].strip()
+                    p = self.process_img(imgList[i], text, w, h)
+                    self.labels[r][c].setPixmap(p)
+                i += 1
 
 
 if __name__ == '__main__':
-
-    # Parse command line arguments
-    args = parse_args()
-    main(args)
+    app = QApplication(sys.argv)
+    win = AppWin()
+    win.show()
+    app.exec_()
+    sys.exit(0)

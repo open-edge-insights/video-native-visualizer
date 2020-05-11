@@ -6,7 +6,7 @@ LABEL description="Visualizer image"
 WORKDIR ${PY_WORK_DIR}
 
 # Installing dependencies
-RUN apt-get install -y python3.6-tk
+RUN apt-get install -y libgl1-mesa-dev python3-pyqt5
 
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
