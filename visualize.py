@@ -49,7 +49,7 @@ class SubscriberCallback:
     callback in to EIS.
     """
 
-    def __init__(self, topicQueueDict, logger, profiling,
+    def __init__(self, topicQueueDict, logger,
                  good_color=(0, 255, 0), bad_color=(0, 0, 255), dir_name=None,
                  save_image=False, display=None, labels=None):
         """Constructor
@@ -75,19 +75,6 @@ class SubscriberCallback:
         self.dir_name = dir_name
         self.save_image = bool(strtobool(save_image))
         self.display = display
-
-        self.profiling = profiling
-        self.logger.debug(f'Profiling is : {self.profiling}')
-
-        self.curr_frame = 0
-
-        self.vi_filter_input_queue_wait = 0.0
-        self.e2e = 0.0
-
-        self.timeseries_points = 0
-        self.ic_pub_total = 0.0
-        self.ic_pub_wait_queue = 0.0
-        self.ic_to_vs = 0.0
 
         self.msg_frame_queue = queue.Queue(maxsize=15)
 
@@ -289,8 +276,6 @@ class SubscriberCallback:
             metadata, blob = subscriber.recv()
 
             if metadata is not None and blob is not None:
-                if self.profiling is True:
-                    self.add_profile_data(metadata)
                 results, frame = self.draw_defect(metadata, blob, topic,
                                                   stream_label)
 
@@ -305,108 +290,7 @@ class SubscriberCallback:
                 else:
                     self.logger.info(f'Classifier_results: {results}')
             else:
-                if self.profiling is True:
-                    self.add_profile_data_timeseries(metadata)
                 self.logger.info(f'Classifier_results: {metadata}')
-
-    @staticmethod
-    def prepare_timeseries_stats(results):
-        timeseries_stats = dict()
-        data = results['data'].split(',')
-        for d in data[1:]:
-            pair = d.split('=')
-            if len(pair) == 2:
-                timeseries_stats[pair[0]] = pair[1].split()[0]
-
-        diff = int(timeseries_stats['ts_idbconn_pub_exit']) - \
-            int(timeseries_stats['ts_idbconn_pub_entry'])
-
-        timeseries_stats['ic_pub_total'] = diff
-
-        diff = int(timeseries_stats['ts_idbconn_pub_queue_exit']) - \
-            int(timeseries_stats['ts_idbconn_pub_queue_entry'])
-
-        timeseries_stats['ic_pub_wait_queue'] = diff
-
-        diff = int(results['ts_visualize_entry']) - \
-            int(timeseries_stats['ts_idbconn_pub_exit'])
-
-        timeseries_stats['ic_to_vs'] = diff
-        return timeseries_stats
-
-    def prepare_avg_stats_timeseries(self, timeseries_stats):
-        self.ic_pub_total = self.ic_pub_total + \
-            timeseries_stats['ic_pub_total']
-
-        self.ic_pub_wait_queue = self.ic_pub_wait_queue + \
-            timeseries_stats['ic_pub_wait_queue']
-
-        self.ic_to_vs = self.ic_to_vs + timeseries_stats['ic_to_vs']
-        self.timeseries_points = self.timeseries_points + 1
-        avg_timeseries_stats = dict()
-        avg_timeseries_stats['avg_ic_pub_total'] = \
-            self.ic_pub_total / self.timeseries_points
-
-        avg_timeseries_stats['avg_ic_pub_wait_queue'] = \
-            self.ic_pub_wait_queue / self.timeseries_points
-
-        avg_timeseries_stats['avg_ic_to_vs'] = \
-            self.ic_to_vs / self.timeseries_points
-
-        return avg_timeseries_stats
-
-    @staticmethod
-    def prepare_per_frame_stats(results):
-        per_frame_stats = dict()
-        vi_filter_input_queue_wait = \
-            results["ts_filterQ_exit"] - results["ts_filterQ_entry"]
-        vi_filter_input_queue_wait = vi_filter_input_queue_wait/1000
-        e2e = results["ts_visualize_entry"] - results["ts_Ingestor_entry"]
-        e2e = e2e/1000
-        per_frame_stats['vi_filter_input_queue_wait'] = \
-            vi_filter_input_queue_wait
-        per_frame_stats["e2e"] = e2e
-        return per_frame_stats
-
-    def prepare_avg_stats(self, per_frame_stats):
-        self.curr_frame = self.curr_frame + 1
-        self.vi_filter_input_queue_wait += \
-            per_frame_stats['vi_filter_input_queue_wait']
-        avg_vi_filter_input_queue_wait = \
-            self.vi_filter_input_queue_wait / self.curr_frame
-
-        self.e2e += per_frame_stats["e2e"]
-        avg_e2e = self.e2e / self.curr_frame
-
-        avg_stats = dict()
-        avg_stats["avg_vi_filter_input_queue_wait"] = \
-            avg_vi_filter_input_queue_wait
-        avg_stats["avg_e2e"] = avg_e2e
-        return avg_stats
-
-    def add_profile_data_timeseries(self, data):
-        data['ts_visualize_entry'] = time.time()*1000
-        self.logger.info(f'Original timeseries is: {data}')
-        timeseries_stats = SubscriberCallback.prepare_timeseries_stats(data)
-        avg_timeseries_stats = \
-            self.prepare_avg_stats_timeseries(timeseries_stats)
-        self.logger.info(f'==========STATS START==========')
-        self.logger.info(f'timeseries_stats: {timeseries_stats}')
-        self.logger.info(f'avg_timeseries_stats: {avg_timeseries_stats}')
-        self.logger.info(f'==========STATS END==========\n')
-        return data
-
-    def add_profile_data(self, data):
-        data['ts_visualize_entry'] = time.time()*1000000
-        per_frame_stats = SubscriberCallback.prepare_per_frame_stats(data)
-        avg_value = self.prepare_avg_stats(per_frame_stats)
-
-        self.logger.info(f'==========STATS START==========')
-        self.logger.info(f'Original data is: {data}')
-        self.logger.info(f'Per frame stats in miliseconds: {per_frame_stats}')
-        self.logger.info(f'frame avg stats in miliseconds: {avg_value}')
-        self.logger.info(f'==========STATS END==========\n')
-        return data
 
 
 class Main(QThread):
@@ -431,12 +315,11 @@ class Main(QThread):
         assert os.path.exists(path), 'Path: {} does not exist'.format(path)
 
     @staticmethod
-    def msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig,
-                           profiling):
+    def msg_bus_subscriber(topic_config_list, queueDict, logger, jsonConfig):
         """msg_bus_subscriber is the ZeroMQ callback to
         subscribe to classified results
         """
-        sc = SubscriberCallback(queueDict, logger, profiling,
+        sc = SubscriberCallback(queueDict, logger,
                                 dir_name=os.environ["IMAGE_DIR"],
                                 save_image=jsonConfig["save_image"],
                                 display=jsonConfig["display"],
@@ -496,7 +379,6 @@ class Main(QThread):
 
         jsonConfig = json.loads(visualizerConfig)
         image_dir = os.environ["IMAGE_DIR"]
-        profiling = bool(strtobool(os.environ["PROFILING_MODE"]))
 
         # If user provides image_dir, create the directory if don't exists
         if image_dir:
@@ -528,7 +410,7 @@ class Main(QThread):
             topic_config_list.append(topic_config)
 
         self.msg_bus_subscriber(topic_config_list, self.queueDict, self.logger,
-                                jsonConfig, profiling)
+                                jsonConfig)
 
         if jsonConfig["display"].lower() == "true":
             self.grid_cols, self.grid_rows = \
