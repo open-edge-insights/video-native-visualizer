@@ -52,7 +52,6 @@ Simple visualizer for the EIS platform.
 
 ```json
   "/Visualizer/config": {
-      "display": "true",
       "save_image": "false",
       "labels" : {
           "camera1_stream_results": {

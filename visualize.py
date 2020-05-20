@@ -51,7 +51,7 @@ class SubscriberCallback:
 
     def __init__(self, topicQueueDict, logger,
                  good_color=(0, 255, 0), bad_color=(0, 0, 255), dir_name=None,
-                 save_image=False, display=None, labels=None):
+                 save_image=False, labels=None):
         """Constructor
 
         :param frame_queue: Queue to put frames in as they become available
@@ -74,7 +74,6 @@ class SubscriberCallback:
         self.bad_color = bad_color
         self.dir_name = dir_name
         self.save_image = bool(strtobool(save_image))
-        self.display = display
 
         self.msg_frame_queue = queue.Queue(maxsize=15)
 
@@ -285,12 +284,7 @@ class SubscriberCallback:
                 if self.save_image:
                     self.save_images(topic, results, frame)
 
-                if self.display.lower() == 'true':
-                    self.queue_publish(topic, frame)
-                else:
-                    self.logger.info(f'Classifier_results: {results}')
-            else:
-                self.logger.info(f'Classifier_results: {metadata}')
+                self.queue_publish(topic, frame)
 
 
 class Main(QThread):
@@ -322,7 +316,6 @@ class Main(QThread):
         sc = SubscriberCallback(queueDict, logger,
                                 dir_name=os.environ["IMAGE_DIR"],
                                 save_image=jsonConfig["save_image"],
-                                display=jsonConfig["display"],
                                 labels=jsonConfig["labels"])
 
         for topic_config in topic_config_list:
@@ -412,9 +405,8 @@ class Main(QThread):
         self.msg_bus_subscriber(topic_config_list, self.queueDict, self.logger,
                                 jsonConfig)
 
-        if jsonConfig["display"].lower() == "true":
-            self.grid_cols, self.grid_rows = \
-                self.get_best_grid_size(len(self.topicsList), 2)
+        self.grid_cols, self.grid_rows = \
+            self.get_best_grid_size(len(self.topicsList), 2)
 
     def run(self):
         try:

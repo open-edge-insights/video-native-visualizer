@@ -2,15 +2,10 @@
   "definitions": {},
   "type": "object",
   "required": [
-    "display",
     "save_image",
     "labels"
   ],
   "properties": {
-    "display": {
-      "type": "string",
-      "pattern": "^(.*)$"
-    },
     "save_image": {
       "type": "string",
       "pattern": "^(.*)$"
