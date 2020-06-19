@@ -214,23 +214,30 @@ class SubscriberCallback:
         (dx, dy) = (20, 50)
         if 'display_info' in results:
             for d_i in results['display_info']:
-                # Get priority
-                priority = d_i['priority']
-                info = d_i['info']
-                dy = dy + 10
+                try:
+                    # Get priority
+                    priority = d_i['priority']
+                    info = d_i['info']
+                    dy = dy + 10
 
-                #  LOW
-                if priority == 0:
-                    cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
-                                0.5, (0, 255, 0), 1, cv2.LINE_AA)
-                #  MEDIUM
-                if priority == 1:
-                    cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
-                                0.5, (0, 150, 170), 1, cv2.LINE_AA)
-                #  HIGH
-                if priority == 2:
-                    cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
-                                0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                    #  LOW
+                    if priority == 0:
+                        cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
+                                    0.5, (0, 255, 0), 1, cv2.LINE_AA)
+                    #  MEDIUM
+                    if priority == 1:
+                        cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
+                                    0.5, (0, 150, 170), 1, cv2.LINE_AA)
+                    #  HIGH
+                    if priority == 2:
+                        cv2.putText(frame, info, (dx, dy), cv2.FONT_HERSHEY_DUPLEX,
+                                    0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                except TypeError as e:
+                    self.logger.exception('Invalid type: {} for data : {}'.format(e,results['display_info']))
+                except KeyError as e:
+                    self.logger.exception('Key not found: {} for data :{}'.format(e,d_i))
+                except Exception as e:
+                    self.logger.exception('Unexpected error during execution:{}'.format(e))             
 
         return results, frame
 
