@@ -125,7 +125,7 @@ class SubscriberCallback:
             except cv2.error as ex:
                 self.logger.error("frame: {}, exception: {}".format(frame, ex))
         else:
-            self.logger.info("Encoding not enabled...")
+            self.logger.debug("Encoding not enabled...")
             frame = np.reshape(frame, (height, width, channels))
 
         # Draw defects for Gva
@@ -204,7 +204,7 @@ class SubscriberCallback:
         for res in results:
             if "Fps" in res:
                 fps_str = "{} : {}".format(str(res), str(results[res]))
-                self.logger.debug(fps_str)
+                self.logger.info(fps_str)
                 cv2.putText(frame, fps_str, (x, y),
                             cv2.FONT_HERSHEY_DUPLEX, 0.5,
                             self.good_color, 1, cv2.LINE_AA)
@@ -275,8 +275,7 @@ class SubscriberCallback:
                 results, frame = self.draw_defect(metadata, blob, topic,
                                                   stream_label)
 
-                if 'gva_meta' in metadata:
-                    self.logger.info(f'Metadata is : {metadata}')
+                self.logger.debug(f'Metadata is : {metadata}')
 
                 if self.save_image:
                     self.save_images(topic, results, frame)
