@@ -146,7 +146,7 @@ class SubscriberCallback:
                         count += 10
                         if stream_label is not None and \
                            str(label_list['label_id']) in stream_label:
-                            label = stream_label[str(label_lsit['label_id'])]
+                            label = stream_label[str(label_list['label_id'])]
                             cv2.putText(frame, label, pos,
                                         cv2.FONT_HERSHEY_DUPLEX, 0.5,
                                         self.bad_color, 2, cv2.LINE_AA)
