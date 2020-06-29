@@ -213,7 +213,7 @@ class SubscriberCallback:
                 # Get priority
                 priority = d_i['priority']
                 info = d_i['info']
-                dy_axis = dy_axis + 10
+                d_y = d_y + 10
 
                 #  LOW
                 if priority == 0:
