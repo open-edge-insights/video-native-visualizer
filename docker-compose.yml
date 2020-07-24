@@ -39,6 +39,7 @@ services:
     hostname: ia_visualizer
     network_mode: host
     restart: unless-stopped
+    ipc: "none"
     environment:
       AppName: "Visualizer"
       DISPLAY: ":0"
