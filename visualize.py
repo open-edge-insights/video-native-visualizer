@@ -44,7 +44,7 @@ class SubscriberCallback:
     callback in to EIS.
     """
 
-    def __init__(self, topic_queue_dict, logger,
+    def __init__(self, topic_queue_dict, logger, draw_results,
                  good_color=(0, 255, 0), bad_color=(0, 0, 255), dir_name=None,
                  save_image=False, labels=None):
         """Constructor
@@ -61,6 +61,9 @@ class SubscriberCallback:
         :param bad_color: (Optional) Tuple for RGB color to use for outlining a
             bad image
         :type: tuple
+        :param draw_results: For enabling bounding box in visualizer
+        :type: string
+
         """
         self.topic_queue_dict = topic_queue_dict
         self.logger = logger
@@ -69,8 +72,8 @@ class SubscriberCallback:
         self.bad_color = bad_color
         self.dir_name = dir_name
         self.save_image = bool(strtobool(save_image))
-
         self.msg_frame_queue = queue.Queue(maxsize=15)
+        self.draw_results = bool(strtobool(draw_results))
 
     def queue_publish(self, topic, frame):
         """queue_publish called after defects bounding box is drawn
@@ -91,7 +94,7 @@ class SubscriberCallback:
                 else:
                     self.logger.warning("Dropping frames as the queue is full")
 
-    def draw_defect(self, results, blob, stream_label):
+    def decode_frame(self, results, blob, stream_label):
         """Identify the defects and draw boxes on the frames
 
         :param results: Metadata of frame received from message bus.
@@ -124,6 +127,18 @@ class SubscriberCallback:
             self.logger.debug("Encoding not enabled...")
             frame = np.reshape(frame, (height, width, channels))
 
+        return results, frame
+
+    def draw_defect(self, results, frame, stream_label):
+        """Draw boxes on the frames
+
+        :param results: Metadata of frame received from message bus.
+        :type: dict
+        :param frame: Classified frame.
+        :type: numpy
+        :param stream_label: Message received on the given topic (JSON blob)
+        :type: str
+        """
         # Draw defects for Gva
         if 'gva_meta' in results:
             count = 0
@@ -135,9 +150,9 @@ class SubscriberCallback:
 
                 top_left = tuple([x1_axis, y1_axis])
                 bottom_right = tuple([x2_axis, y2_axis])
-
                 # Draw bounding box
-                cv2.rectangle(frame, top_left, bottom_right, self.bad_color, 2)
+                cv2.rectangle(frame, top_left, bottom_right,
+                              self.bad_color, 2)
 
                 # Draw labels
                 for label_list in defect['tensor']:
@@ -167,7 +182,8 @@ class SubscriberCallback:
                 bottom_right = tuple(defect['br'])
 
                 # Draw bounding box
-                cv2.rectangle(frame, top_left, bottom_right, self.bad_color, 2)
+                cv2.rectangle(frame, top_left, bottom_right,
+                              self.bad_color, 2)
 
                 # Draw labels for defects if given the mapping
                 if stream_label is not None:
@@ -231,10 +247,9 @@ class SubscriberCallback:
                                 cv2.FONT_HERSHEY_DUPLEX, 0.5,
                                 (0, 0, 255), 1, cv2.LINE_AA)
 
-        return results, frame
-
     def save_images(self, msg, frame):
-        """Save_images save the image to a directory based on good or bad images.
+        """Save_images save the image to a directory based
+           on good or bad images.
 
         :param msg: metadata of the frame
         :type: str
@@ -278,10 +293,13 @@ class SubscriberCallback:
             metadata, blob = subscriber.recv()
 
             if metadata is not None and blob is not None:
-                results, frame = self.draw_defect(metadata, blob,
-                                                  stream_label)
+                results, frame = self.decode_frame(metadata, blob,
+                                                   stream_label)
 
                 self.logger.debug(f'Metadata is : {metadata}')
+
+                if(self.draw_results):
+                    self.draw_defect(results, frame, stream_label)
 
                 if self.save_image:
                     self.save_images(results, frame)
@@ -326,14 +344,16 @@ def assert_exists(path):
 #         topRoot.update()
 
 
-def msg_bus_subscriber(topic_config_list, queue_dict, logger, json_config):
+def msg_bus_subscriber(topic_config_list, queue_dict, logger,
+                       json_config):
     """msg_bus_subscriber is the ZeroMQ callback to
     subscribe to classified results
     """
     sub_cb = SubscriberCallback(queue_dict, logger,
                                 dir_name=os.environ["IMAGE_DIR"],
                                 save_image=json_config["save_image"],
-                                labels=json_config["labels"])
+                                labels=json_config["labels"],
+                                draw_results=json_config["draw_results"])
 
     for topic_config in topic_config_list:
         topic, msgbus_cfg = topic_config
@@ -347,7 +367,6 @@ def main(args):
     """Main method.
     """
     dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
-
     # Initializing Etcd to set env variables
     app_name = os.environ["AppName"]
     conf = Util.get_crypto_dict(app_name)
@@ -471,6 +490,7 @@ def main(args):
                 column_count = column_count + 1
 
         root_win.update()
+
         msg_bus_subscriber(topic_config_list, queue_dict, logger,
                            json_config)
 

@@ -32,6 +32,13 @@ Simple visualizer for the EIS platform.
     ```sh
     $ while true; do find <path-to-IMAGE_DIR> -mmin +60 -type f -name "*.png" -exec rm -f {} \;;  done
     ```
+* If user needs to remove the bounding box:
+
+  1. Set the value of draw_results in config.json as false for both Visualiser and WebVisualiser.
+
+    ```
+    draw_results: "false"
+    ```     
 
 #### Using Labels
 

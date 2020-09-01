@@ -12,6 +12,10 @@
     },
     "labels": {
       "type": "object"
+    },
+    "draw_results":{
+      "type": "string",
+      "default": "true"
     }
   }
 }
