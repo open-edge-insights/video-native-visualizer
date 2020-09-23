@@ -1,5 +1,5 @@
 {
-    "/Visualizer/config": {
+    "config": {
         "save_image": "false",
         "draw_results": "true",
         "labels" : {
@@ -15,5 +15,5 @@
             }
         }
     },
-    "/Visualizer/interfaces": {}
+    "interfaces": {}
 }
