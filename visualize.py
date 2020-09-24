@@ -94,15 +94,13 @@ class SubscriberCallback:
                 else:
                     self.logger.warning("Dropping frames as the queue is full")
 
-    def decode_frame(self, results, blob, stream_label):
+    def decode_frame(self, results, blob):
         """Identify the defects and draw boxes on the frames
 
         :param results: Metadata of frame received from message bus.
         :type: dict
         :param blob: Actual frame received from message bus.
         :type: bytes
-        :param results: Message received on the given topic (JSON blob)
-        :type: str
         :return: Return classified results(metadata and frame)
         :rtype: dict and numpy array
         """
@@ -127,7 +125,7 @@ class SubscriberCallback:
             self.logger.debug("Encoding not enabled...")
             frame = np.reshape(frame, (height, width, channels))
 
-        return results, frame
+        return frame
 
     def draw_defect(self, results, frame, stream_label):
         """Draw boxes on the frames
@@ -293,13 +291,12 @@ class SubscriberCallback:
             metadata, blob = subscriber.recv()
 
             if metadata is not None and blob is not None:
-                results, frame = self.decode_frame(metadata, blob,
-                                                   stream_label)
+                frame = self.decode_frame(metadata, blob)
 
                 self.logger.debug(f'Metadata is : {metadata}')
 
                 if(self.draw_results):
-                    self.draw_defect(results, frame, stream_label)
+                    self.draw_defect(metadata, frame, stream_label)
 
                 if self.save_image:
                     self.save_images(results, frame)
