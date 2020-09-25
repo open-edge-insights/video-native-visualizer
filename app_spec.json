@@ -22,9 +22,7 @@
             "DEV_MODE": "$DEV_MODE",
             "ETCD_PREFIX": "$ETCD_PREFIX",
             "CertType": "zmq",
-            "ZMQ_RECV_HWM": "50",
-            "SubTopics": "VideoAnalytics/camera1_stream_results",
-            "camera1_stream_results_cfg": "zmq_tcp,${ep.visualizerInput.remoteaddress}:${ep.visualizerInput.remoteport}"
+            "SUBSCRIBER_default_ENDPOINT": "${ep.visualizerInput.remoteaddress}:${ep.visualizerInput.remoteport}"
         },
         "Endpoints": [
             {

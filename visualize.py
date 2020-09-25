@@ -32,8 +32,7 @@ from distutils.util import strtobool
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
-from eis.config_manager import ConfigManager
-from eis.env_config import EnvConfig
+import cfgmgr.config_manager as cfg
 import eis.msgbus as mb
 from util.util import Util
 from util.log import configure_logging
@@ -363,27 +362,22 @@ def msg_bus_subscriber(topic_config_list, queue_dict, logger,
 def main(args):
     """Main method.
     """
-    dev_mode = bool(strtobool(os.environ["DEV_MODE"]))
     # Initializing Etcd to set env variables
-    app_name = os.environ["AppName"]
-    conf = Util.get_crypto_dict(app_name)
-    cfg_mgr = ConfigManager()
-    config_client = cfg_mgr.get_config_client("etcd", conf)
+    ctx = cfg.ConfigMgr()
+    num_of_subscribers = ctx.get_num_subscribers()
+    dev_mode = ctx.is_dev_mode()
 
     logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
                                __name__, dev_mode)
-
-    app_name = os.environ["AppName"]
     window_name = 'EIS Visualizer App'
 
-    visualizer_config = config_client.GetConfig("/" + app_name + "/config")
+    visualizer_config = ctx.get_app_config()
     # Validating config against schema
     with open('./schema.json', "rb") as infile:
         schema = infile.read()
-        if (Util.validate_json(schema, visualizer_config)) is not True:
+        if (Util.validate_json(schema, json.dumps(visualizer_config.get_dict()))) is not True:
             sys.exit(1)
 
-    json_config = json.loads(visualizer_config)
     image_dir = os.environ["IMAGE_DIR"]
 
     # If user provides image_dir, create the directory if don't exists
@@ -391,27 +385,23 @@ def main(args):
         if not os.path.exists(image_dir):
             os.mkdir(image_dir)
 
-    topics_list = EnvConfig.get_topics_from_env("sub")
-
+    # Initializing required variables
     queue_dict = {}
-
     topic_config_list = []
-    for topic in topics_list:
-        publisher, topic = topic.split("/")
-        topic = topic.strip()
-        queue_dict[topic] = queue.Queue(maxsize=10)
-        msgbus_cfg = EnvConfig.get_messagebus_config(topic, "sub", publisher,
-                                                     config_client, dev_mode)
-
-        mode_address = os.environ[topic + "_cfg"].split(",")
-        mode = mode_address[0].strip()
-        if (not dev_mode and mode == "zmq_tcp"):
-            for key in msgbus_cfg[topic]:
-                if msgbus_cfg[topic][key] is None:
-                    raise ValueError("Invalid Config")
-
+    topics_list = []
+    for index in range(num_of_subscribers):
+        # Fetching subscriber element based on index
+        sub_ctx = ctx.get_subscriber_by_index(index)
+        # Fetching msgbus config of subscriber
+        msgbus_cfg = sub_ctx.get_msgbus_config()
+        # Fetching topics of subscriber
+        topic = sub_ctx.get_topics()[0]
+        # Adding topic & msgbus_config to
+        # topic_config tuple
         topic_config = (topic, msgbus_cfg)
         topic_config_list.append(topic_config)
+        topics_list.append(topic)
+        queue_dict[topic] = queue.Queue(maxsize=10)
 
     try:
         root_win = tkinter.Tk()
@@ -452,9 +442,8 @@ def main(args):
         if len(topics_list) == 1:
             height_value = window_height
             width_value = window_width
-            topic_text = (topics_list[0].split("/"))[1]
-            button_dict[str(button_count)] = tkinter.Button(root_win,
-                                                            text=topic_text)
+            button_dict[str(button_count)] = \
+                tkinter.Button(root_win, text=topics_list[0])
             button_dict[str(button_count)].grid(sticky='NSEW')
             tkinter.Grid.rowconfigure(root_win, 0, weight=1)
             tkinter.Grid.columnconfigure(root_win, 0, weight=1)
@@ -489,7 +478,7 @@ def main(args):
         root_win.update()
 
         msg_bus_subscriber(topic_config_list, queue_dict, logger,
-                           json_config)
+                           visualizer_config)
 
         while True:
             button_count = 0
