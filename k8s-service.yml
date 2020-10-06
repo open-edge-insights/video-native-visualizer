@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: ia-visualizer
-        image: ia_visualizer:${EIS_VERSION}
+        image: ${DOCKER_REGISTRY}ia_visualizer:${EIS_VERSION}
         volumeMounts:
         - name: eis-dev
           mountPath: /dev
