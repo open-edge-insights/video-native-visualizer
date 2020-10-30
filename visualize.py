@@ -221,6 +221,7 @@ def main(args):
             button_count = 0
             for key in queue_dict:
                 if not queue_dict[key].empty():
+                    logger.info('Preparing frame for visualization')
                     frame = queue_dict[key].get_nowait()
                     img = Image.fromarray(frame)
                     del frame
