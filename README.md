@@ -38,11 +38,14 @@ Simple visualizer for the EIS platform.
 
     ```
     draw_results: "false"
-    ```     
+    ```
 
 #### Using Labels
 
-  In order to have the visualizer label each of the defects on the image, labels in JSON format has to be provided in [etcd_pre_load.json](../build/provision/config/etcd_pre_load.json) file under "/Visualizer/config" with the mapping between the topic subscribed and the text that has to be displayed.
+  In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [eis_builder.py](../build/eis_builder.py) script using the below command.
+  ```sh
+  $ python3 eis_builder.py
+  ```
 
   An example of what this JSON value should look like is shown below. In this case
   it is assumed that the classification types are `0` and `1` and the text labels
@@ -55,7 +58,7 @@ Simple visualizer for the EIS platform.
   }
   ```
   > **NOTE:** These labels are the mapping for the PCB demo provided in EIS's visualizer directory. Currently camera1_stream_results consists of pcb demo labeling and camera2_stream_results consists of safety demo labeling.
-  Hence, in [etcd_pre_load.json](../build/provision/config/etcd_pre_load.json) proper mapping of camera1_stream_results, camera2_stream_results (subscribed topics) should be done with pcb demo labeling, safety demo labeling respectively.
+  Hence, in [config.json](./config.json) proper mapping of all the subscribed topics should be done with pcb demo labeling and safety demo labeling respectively.
 
 ```json
   "/Visualizer/config": {
@@ -65,11 +68,24 @@ Simple visualizer for the EIS platform.
               "0": "MISSING",
               "1": "SHORT"
           },
-          "camera2_stream_results":{
-              "1": "safety_helmet",
-              "2": "safety_jacket",
-              "3": "Safe",
-              "4": "Violation"
+          "native_safety_gear_stream_results": {
+               "1": "safety_helmet",
+               "2": "safety_jacket",
+               "3": "Safe",
+               "4": "Violation"
+          },
+          "py_safety_gear_stream_results": {
+               "1": "safety_helmet",
+               "2": "safety_jacket",
+               "3": "Safe",
+               "4": "Violation"
+
+          },
+         "gva_safety_gear_stream_results": {
+               "1": "safety_helmet",
+               "2": "safety_jacket",
+               "3": "Safe",
+               "4": "Violation"
           }
       }
   }
