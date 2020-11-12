@@ -3,7 +3,8 @@
   "type": "object",
   "required": [
     "save_image",
-    "labels"
+    "labels",
+    "draw_results"
   ],
   "properties": {
     "save_image": {

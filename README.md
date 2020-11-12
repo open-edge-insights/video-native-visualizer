@@ -39,7 +39,14 @@ Simple visualizer for the EIS platform.
     ```
     draw_results: "false"
     ```
+* If user needs to save images of visualizer:
+   
+  1. Set the value of save_image in config.json as true 
 
+     ```
+    "save_image": "true"
+    ``` 
+   
 #### Using Labels
 
   In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [eis_builder.py](../build/eis_builder.py) script using the below command.
@@ -63,6 +70,7 @@ Simple visualizer for the EIS platform.
 ```json
   "/Visualizer/config": {
       "save_image": "false",
+      "draw_results": "false",
       "labels" : {
           "camera1_stream_results": {
               "0": "MISSING",
