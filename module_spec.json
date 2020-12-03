@@ -2,7 +2,7 @@
     "SchemaVersion": "0.2",
     "Runtime": "docker",
     "RuntimeOptions": {
-        "ContainerImage": "ia_visualizer:$EIS_VERSION",
+        "ContainerImage": "${idx:ia_visualizer:$EIS_VERSION}",
         "Privileged": true,
         "TemporaryVolumes": [
             "/tmp/.X11-unix:/tmp/.X11-unix",
