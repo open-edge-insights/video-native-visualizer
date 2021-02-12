@@ -33,7 +33,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk
 import cfgmgr.config_manager as cfg
-import eis.msgbus as mb
+import eii.msgbus as mb
 from util.util import Util
 from util.log import configure_logging
 from util.common import Visualizer
@@ -105,7 +105,7 @@ def main(args):
 
     logger = configure_logging(os.environ['PY_LOG_LEVEL'].upper(),
                                __name__, dev_mode)
-    window_name = 'EIS Visualizer App'
+    window_name = 'EII Visualizer App'
 
     visualizer_config = ctx.get_app_config()
     # Validating config against schema
@@ -270,7 +270,7 @@ def main(args):
     except Exception:
         logger.exception('Error during execution:')
     finally:
-        logger.exception('Destroying EIS databus context')
+        logger.exception('Destroying EII databus context')
         sys.exit(1)
 
 

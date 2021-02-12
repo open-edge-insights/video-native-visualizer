@@ -1,12 +1,12 @@
 # Intel Edge Insights Simple Visualizer
-Simple visualizer for the EIS platform.
+Simple visualizer for the EII platform.
 
 ### 1. Running as a docker container
 
 #### Steps to build and run viualizer
 
-* Follow [provision/README.md](../README#provision-eis.md) for EIS provisioning
-  if not done already as part of EIS stack setup
+* Follow [provision/README.md](../README#provision.md) for Provisioning
+  if not done already as part of EII stack setup
 
 * Running visualizer as a container from [build](../../build):
 
@@ -49,9 +49,9 @@ Simple visualizer for the EIS platform.
    
 #### Using Labels
 
-  In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [eis_builder.py](../build/eis_builder.py) script using the below command.
+  In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [builder.py](../build/builder.py) script using the below command.
   ```sh
-  $ python3 eis_builder.py
+  $ python3 builder.py
   ```
 
   An example of what this JSON value should look like is shown below. In this case
@@ -64,7 +64,7 @@ Simple visualizer for the EIS platform.
       "1": "SHORT"
   }
   ```
-  > **NOTE:** These labels are the mapping for the PCB demo provided in EIS's visualizer directory. Currently camera1_stream_results consists of pcb demo labeling and camera2_stream_results consists of safety demo labeling.
+  > **NOTE:** These labels are the mapping for the PCB demo provided in EII's visualizer directory. Currently camera1_stream_results consists of pcb demo labeling and camera2_stream_results consists of safety demo labeling.
   Hence, in [config.json](./config.json) proper mapping of all the subscribed topics should be done with pcb demo labeling and safety demo labeling respectively.
 
 ```json
@@ -101,8 +101,8 @@ Simple visualizer for the EIS platform.
 
 ### Metadata Structure
 
-EIS Visualizer app can decode certain types of mete-data formats for drawing the defects on the image.
-Any application wanting to use EIS visualizer need to comply with the meta-data format as described below:
+EII Visualizer app can decode certain types of mete-data formats for drawing the defects on the image.
+Any application wanting to use EII visualizer need to comply with the meta-data format as described below:
 
 A) For Ingestor's **Non-GVA** type, metadata structure sample is :
 
