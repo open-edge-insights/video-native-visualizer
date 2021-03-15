@@ -22,40 +22,61 @@
 
 ARG EII_VERSION
 ARG DOCKER_REGISTRY
-FROM ${DOCKER_REGISTRY}ia_eiibase:$EII_VERSION as eiibase
-LABEL description="Visualizer image"
-
-WORKDIR ${PY_WORK_DIR}
-
-# Installing dependencies
-RUN apt-get install -y python3.6-tk
-
-COPY requirements.txt .
-RUN pip3 install -r requirements.txt
-
+ARG ARTIFACTS="/artifacts"
+ARG EII_UID
 ARG EII_USER_NAME
-RUN adduser --quiet --disabled-password ${EII_USER_NAME}
-
-ENV PYTHONPATH ${PY_WORK_DIR}/
-
+ARG UBUNTU_IMAGE_VERSION
+FROM ${DOCKER_REGISTRY}ia_eiibase:$EII_VERSION as base
 FROM ${DOCKER_REGISTRY}ia_common:$EII_VERSION as common
 
-FROM eiibase
+FROM base as builder
+LABEL description="Visualizer image"
 
-COPY --from=common ${GO_WORK_DIR}/common/libs ${PY_WORK_DIR}/libs
-COPY --from=common ${GO_WORK_DIR}/common/util ${PY_WORK_DIR}/util
-COPY --from=common ${GO_WORK_DIR}/common/cmake ${PY_WORK_DIR}/common/cmake
-COPY --from=common /usr/local/lib /usr/local/lib
-COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python3.6/dist-packages
+ARG ARTIFACTS
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip3 install --user -r requirements.txt
 
 COPY . .
 
-#Removing build dependencies
-RUN apt-get remove -y wget && \
-    apt-get remove -y git && \
-    apt-get remove curl && \
-    apt-get autoremove -y
+FROM ubuntu:$UBUNTU_IMAGE_VERSION as runtime
+
+
+# Setting python dev env
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends libsm6 \
+                                               libxext6 \
+                                               libfontconfig1 \
+                                               libxrender1 \
+                                               python3.6 \
+                                               python3-distutils \
+                                               python3-tk && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+
+ARG EII_UID
+ARG EII_USER_NAME
+RUN adduser --quiet --disabled-password ${EII_USER_NAME}
+
+ARG ARTIFACTS
+ARG CMAKE_INSTALL_PREFIX
+ENV PYTHONPATH $PYTHONPATH:/app/.local/lib/python3.6/site-packages:/app
+COPY --from=common ${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_INSTALL_PREFIX}/lib
+COPY --from=common /eii/common/util util
+COPY --from=common /root/.local/lib .local/lib
+COPY --from=builder /root/.local/lib .local/lib
+COPY --from=builder /app .
+
+RUN chown -R ${EII_UID} .local/lib/python3.6
+
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:${CMAKE_INSTALL_PREFIX}/lib
+ENV PATH $PATH:/app/.local/bin
 
 HEALTHCHECK NONE
-
-ENTRYPOINT ["python3.6", "visualize.py"]
+ENTRYPOINT ["python3", "visualize.py"]
