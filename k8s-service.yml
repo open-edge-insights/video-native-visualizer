@@ -40,8 +40,6 @@ spec:
       - name: ia-visualizer
         image: ${DOCKER_REGISTRY}ia_visualizer:${EII_VERSION}
         volumeMounts:
-        - name: eii-dev
-          mountPath: /dev
         - name: eii-socket
           mountPath: ${SOCKET_DIR}
         - name: saved-images
@@ -87,9 +85,6 @@ spec:
           value: "videoanalytics:65013"
 
       volumes:
-      - name: eii-dev
-        hostPath:
-          path: /dev
       - name: eii-socket
         hostPath:
           path: ${EII_INSTALL_PATH}/sockets
