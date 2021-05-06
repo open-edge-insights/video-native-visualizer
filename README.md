@@ -10,8 +10,9 @@ Simple visualizer for the EII platform.
 
 * Running visualizer as a container from [build](../../build):
 
-  ```
-    $ docker-compose up --build ia_visualizer
+  ```sh
+  $ xhost +
+  $ docker-compose up --build ia_visualizer
   ```
 
 -----
@@ -23,6 +24,19 @@ Simple visualizer for the EII platform.
    ```sh
    $ xhost +
    ```
+4. If the Visualizer UI doesn’t show up and if you notice couldn't connect to display ":0" error
+   in `docker logs -f ia_visualizer`, please check the value for `DISPLAY` env variable on the host
+   machine by running cmd: `env | grep DISPLAY`, please set this as the value for the `DISPLAY`
+   nv variable in the ia_visualizer service of [docker-compose.yml](docker-compose.yml) or in the
+   consolidated [../build/docker-compose.yml](../build/docker-compose.yml) file and re-run
+   `docker-compose up ia_visualizer -d`
+
+    Example:
+    ```sh
+    $ env | grep DISPLAY
+    DISPLAY:=1
+    ```
+    Set “:=1” as `DISPLAY` env value in ia_visualizer service
 -----
 
 * If one needs to remove the classified images on a periodic basis:
@@ -49,9 +63,9 @@ Simple visualizer for the EII platform.
    
 #### Using Labels
 
-  In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [eii_builder.py](../build/eii_builder.py) script using the below command.
+  In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [builder.py](../build/builder.py) script using the below command.
   ```sh
-  $ python3 eii_builder.py
+  $ python3 builder.py
   ```
 
   An example of what this JSON value should look like is shown below. In this case
