@@ -1,0 +1,9 @@
+config:
+    visualizer:
+      name: visualizer
+volumes:
+  savedimage:
+    name: vol-savedimage
+    size: 1Gi
+    location: "/opt/intel/eii/saved_images"
+    hostpath: "/opt/intel/eii/saved_images"
