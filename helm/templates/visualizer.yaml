@@ -74,8 +74,21 @@ spec:
           # MessageBus Endpoint Configuration
         - name: CertType
           value: "zmq"
-        - name: SUBSCRIBER_default_ENDPOINT
-          value: "videoanalytics:65013"
+        {{- $global := . -}}
+        {{- range $instance_idx := until (int .Values.num_video_instances) -}}
+        {{- $instance := "" }}
+        {{- $subscriber_port := "" }}
+        {{- if eq (int $global.Values.num_video_instances) 1 }}
+        {{- $subscriber_port = $global.Values.config.video_analytics.publish_port }}
+        {{- $instance = "" }}
+        {{- end }}
+        {{- if gt (int $global.Values.num_video_instances) 1 }}
+        {{- $subscriber_port = add $global.Values.config.video_analytics.publish_port  $instance_idx }}
+        {{- $instance = add 1 $instance_idx }}
+        {{- end }}
+        - name: SUBSCRIBER_default{{ $instance }}_ENDPOINT
+          value: "{{ $global.Values.config.video_analytics.name }}{{ $instance }}:{{ $subscriber_port }}"
+        {{- end }}
 
       volumes:
       - name: {{ .Values.volumes.savedimage.name }}
