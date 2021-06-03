@@ -1,6 +1,7 @@
 config:
     visualizer:
       name: visualizer
+      IPC: false
 volumes:
   savedimage:
     name: vol-savedimage

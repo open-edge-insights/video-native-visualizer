@@ -40,6 +40,10 @@ spec:
       - name: ia-visualizer
         image: "{{ .Values.registry }}ia_visualizer:{{ .Values.eii_version }}"
         volumeMounts:
+        {{- if eq .Values.config.visualizer.IPC true}}
+        - name: {{ .Values.volumes.eii_socket.name }}
+          mountPath: {{ .Values.volumes.eii_socket.location }}
+        {{- end }}
         - name: {{ .Values.volumes.savedimage.name }}
           mountPath: {{ .Values.volumes.savedimage.location }}
         - name: tmp
@@ -86,11 +90,25 @@ spec:
         {{- $subscriber_port = add $global.Values.config.video_analytics.publish_port  $instance_idx }}
         {{- $instance = add 1 $instance_idx }}
         {{- end }}
+        {{- if eq $global.Values.config.visualizer.IPC false}}
         - name: SUBSCRIBER_default{{ $instance }}_ENDPOINT
           value: "{{ $global.Values.config.video_analytics.name }}{{ $instance }}:{{ $subscriber_port }}"
+        - name: SUBSCRIBER_default{{ $instance }}_TYPE
+          value: "zmq_tcp"
+        {{- else }}
+        - name: SUBSCRIBER_default{{ $instance }}_ENDPOINT
+          value: "{{ $global.Values.env.SOCKET_DIR }}"
+        - name: SUBSCRIBER_default{{ $instance }}_TYPE
+          value: "zmq_ipc"
+        {{- end }}
         {{- end }}
 
       volumes:
+      {{- if eq .Values.config.visualizer.IPC true}}
+      - name: {{ .Values.volumes.eii_socket.name }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.volumes.eii_socket.name }}
+      {{- end }}
       - name: {{ .Values.volumes.savedimage.name }}
         persistentVolumeClaim:
           claimName: {{ .Values.volumes.savedimage.name }}
