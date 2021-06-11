@@ -35,7 +35,7 @@ services:
         EII_USER_NAME: ${EII_USER_NAME}
         DOCKER_REGISTRY: ${DOCKER_REGISTRY}
         CMAKE_INSTALL_PREFIX: ${EII_INSTALL_PATH}
-        OPENVINO_IMAGE_VERSION: ${OPENVINO_IMAGE_VERSION}
+        OPENVINO_IMAGE: ${OPENVINO_IMAGE}
     read_only: true
     image: ${DOCKER_REGISTRY}ia_visualizer:${EII_VERSION}
     container_name: ia_visualizer
@@ -46,7 +46,7 @@ services:
     - no-new-privileges
     healthcheck:
       test: ["CMD-SHELL", "exit", "0"]
-      interval: 5m    
+      interval: 5m
     environment:
       AppName: "Visualizer"
       DISPLAY: ":0"
