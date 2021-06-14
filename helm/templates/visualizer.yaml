@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: ia-visualizer
-        image: "{{ .Values.registry }}ia_visualizer:{{ .Values.eii_version }}"
+        image: "{{ .Values.DOCKER_REGISTRY }}ia_visualizer:{{ .Values.EII_VERSION }}"
         volumeMounts:
         {{- if eq .Values.config.visualizer.IPC true}}
         - name: {{ .Values.volumes.eii_socket.name }}
@@ -48,7 +48,7 @@ spec:
           mountPath: {{ .Values.volumes.savedimage.location }}
         - name: tmp
           mountPath: /tmp/.X11-unix
-        {{ if eq .Values.env.dev_mode false}}
+        {{ if eq .Values.env.DEV_MODE false}}
         - name: etcd-certs
           mountPath: /run/secrets/etcd/
         {{ end }}
@@ -60,14 +60,14 @@ spec:
         - name: IMAGE_DIR
           value: "{{.Values.env.EII_INSTALL_PATH }}/saved_images"
         - name: DEV_MODE
-          value: '{{ .Values.env.dev_mode }}'
+          value: '{{ .Values.env.DEV_MODE }}'
         - name: PROFILING_MODE
           value: '{{ .Values.env.PROFILING_MODE }}' 
         - name: ETCD_HOST
           value: etcd
         - name: ETCD_CLIENT_PORT
           value: '{{.Values.config.etcd.client_port }}'
-        {{ if eq .Values.env.dev_mode false}}
+        {{ if eq .Values.env.DEV_MODE false}}
         - name: CONFIGMGR_CACERT
           value: "/run/secrets/etcd/ca_certificate.pem"
         - name: CONFIGMGR_CERT
@@ -116,7 +116,7 @@ spec:
         hostPath:
           path: "/tmp/.X11-unix"
 
-      {{ if eq .Values.env.dev_mode false}}
+      {{ if eq .Values.env.DEV_MODE false}}
       - name: etcd-certs
         secret:
           secretName: eii-certs
