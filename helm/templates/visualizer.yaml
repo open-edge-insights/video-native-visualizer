@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: ia-visualizer
-        image: "{{ .Values.DOCKER_REGISTRY }}ia_visualizer:{{ .Values.EII_VERSION }}"
+        image: "{{ .Values.DOCKER_REGISTRY }}openedgeinsights/ia_visualizer:{{ .Values.EII_VERSION }}"
         volumeMounts:
         {{- if eq .Values.config.visualizer.IPC true}}
         - name: {{ .Values.volumes.eii_socket.name }}
