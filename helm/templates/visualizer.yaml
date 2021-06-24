@@ -36,6 +36,10 @@ spec:
       labels:
         app: "{{ .Values.config.visualizer.name }}"
     spec:
+      {{- if and .Values.DOCKER_USERNAME .Values.DOCKER_PASSWORD }}
+      imagePullSecrets:
+      - name: registryauth
+      {{- end }}
       containers:
       - name: ia-visualizer
         image: "{{ .Values.DOCKER_REGISTRY }}openedgeinsights/ia_visualizer:{{ .Values.EII_VERSION }}"
