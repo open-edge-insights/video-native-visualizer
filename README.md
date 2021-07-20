@@ -1,19 +1,22 @@
-# Intel Edge Insights Simple Visualizer
-Simple visualizer for the EII platform.
+**Contents**
 
-### 1. Running as a docker container
+- [`Native Visualizer Module`](#native-visualizer-module)
+  - [Steps to build and run visualizer](#steps-to-build-and-run-visualizer)
+  - [Using Labels](#using-labels)
+  - [Metadata Structure](#metadata-structure)
 
-#### Steps to build and run viualizer
+# `Native Visualizer Module`
 
-* Follow [provision/README.md](../README#provision.md) for Provisioning
-  if not done already as part of EII stack setup
+Native Visualizer ia a native app to view the classified images/metadata coming out of EII.
 
-* Running visualizer as a container from [build](../../build):
+## Steps to build and run visualizer
 
-  ```sh
-  $ xhost +
-  $ docker-compose up --build ia_visualizer
-  ```
+Please go through the below sections to have visualizer service built and launch it:
+- [../README.md#generate-deployment-and-configuration-files](../README.md#generate-deployment-and-configuration-files)
+- [../README.md#provision](../README.md#provision)
+- [../README.md#build-and-run-eii-videotimeseries-use-cases](../README.md#build-and-run-eii-videotimeseries-use-cases)
+
+For more details, refer [EII core README](../README.md)
 
 -----
 **NOTE**:
@@ -36,7 +39,7 @@ Simple visualizer for the EII platform.
     $ env | grep DISPLAY
     DISPLAY:=1
     ```
-    Set “:=1” as `DISPLAY` env value in ia_visualizer service
+    Set ":=1" as `DISPLAY` env value in ia_visualizer service
 -----
 
 * If one needs to remove the classified images on a periodic basis:
@@ -54,14 +57,13 @@ Simple visualizer for the EII platform.
     draw_results: "false"
     ```
 * If user needs to save images of visualizer:
-   
-  1. Set the value of save_image in config.json as true 
+
+  1. Set the value of save_image in config.json as true
 
      ```
     "save_image": "true"
-    ``` 
-   
-#### Using Labels
+    ```
+## Using Labels
 
   In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [builder.py](../build/builder.py) script using the below command.
   ```sh
@@ -113,7 +115,7 @@ Simple visualizer for the EII platform.
   }
 ```
 
-### Metadata Structure
+## Metadata Structure
 
 EII Visualizer app can decode certain types of mete-data formats for drawing the defects on the image.
 Any application wanting to use EII visualizer need to comply with the meta-data format as described below:
@@ -122,20 +124,20 @@ A) For Ingestor's **Non-GVA** type, metadata structure sample is :
 
 ```json
 {
- 'channels': 3,
- 'encoding_type': 'jpeg',
- 'height': 1200,
+ "channels": 3,
+ "encoding_type": "jpeg",
+ "height": 1200,
 
- 'defects': [
-     {'type': 0, 'tl': [1019, 644], 'br': [1063, 700]},
-     {'type': 0, 'tl': [1297, 758], 'br': [1349, 796]}
+ "defects": [
+     {"type": 0, "tl": [1019, 644], "br": [1063, 700]},
+     {"type": 0, "tl": [1297, 758], "br": [1349, 796]}
     ],
 
-'display_info': [{'info':'good', 'priority':0}],
+"display_info": [{"info":"good", "priority":0}],
 
-'img_handle': '348151d424',
-'width': 1920,
-'encoding_level': 95
+"img_handle": "348151d424",
+"width": 1920,
+"encoding_level": 95
 }
 ```
 
@@ -158,20 +160,19 @@ B) For Ingestor's **GVA** type, metadata structure sample is :
 
 ```json
 {
-    'channels': 3,
-    'gva_meta': [
+    "channels": 3,
+    "gva_meta": [
 
-        {'x': 1047, 'height': 86, 'y': 387, 'width': 105, 'tensor': [{'label': '', 'label_id': 1, 'confidence':0.8094226121902466, 'attribute':'detection'}]},
+        {"x": 1047, "height": 86, "y": 387, "width": 105, "tensor": [{"label": "", "label_id": 1, "confidence":0.8094226121902466, "attribute":"detection"}]},
 
-        {'x': 1009, 'height': 341, 'y': 530, 'width': 176, 'tensor': [{'label': '', 'label_id': 2, 'confidence': 0.9699158668518066, 'attribute': 'detection'}]}
+        {"x": 1009, "height": 341, "y": 530, "width": 176, "tensor": [{"label": "", "label_id": 2, "confidence": 0.9699158668518066, "attribute": "detection"}]}
 
         ],
-
-    'encoding_type': 'jpeg',
-    'height': 1080,
-    'img_handle': '7247149a0d',
-    'width': 1920,
-    'encoding_level': 95
+    "encoding_type": "jpeg",
+    "height": 1080,
+    "img_handle": "7247149a0d",
+    "width": 1920,
+    "encoding_level": 95
 }
 
 ```
