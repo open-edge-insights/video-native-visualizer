@@ -1,11 +1,11 @@
 **Contents**
 
-- [`Native Visualizer Module`](#native-visualizer-module)
+- [Native Visualizer Module](#native-visualizer-module)
   - [Steps to build and run visualizer](#steps-to-build-and-run-visualizer)
   - [Using Labels](#using-labels)
   - [Metadata Structure](#metadata-structure)
 
-# `Native Visualizer Module`
+# Native Visualizer Module
 
 Native Visualizer ia a native app to view the classified images/metadata coming out of EII.
 
@@ -19,15 +19,15 @@ Please go through the below sections to have visualizer service built and launch
 For more details, refer [EII core README](../README.md)
 
 -----
-**NOTE**:
-1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
-2. The user has to make sure the path provided in docker-compose volumes of visualizer correlates to the one in etcd before running visualizer if he wishes to save images.
-3. Run this command in terminal if you run into tkinter couldn't connect to display exception
+> **NOTE**:
+> 1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
+> 2. The user has to make sure the path provided in docker-compose volumes of visualizer correlates to the one in etcd before running visualizer if he wishes to save images.
+> 3. Run this command in terminal if you run into tkinter couldn't connect to display exception
 
    ```sh
    $ xhost +
    ```
-4. If the Visualizer UI doesn’t show up and if you notice couldn't connect to display ":0" error
+> 4. If the Visualizer UI doesn’t show up and if you notice couldn't connect to display ":0" error
    in `docker logs -f ia_visualizer`, please check the value for `DISPLAY` env variable on the host
    machine by running cmd: `env | grep DISPLAY`, please set this as the value for the `DISPLAY`
    nv variable in the ia_visualizer service of [docker-compose.yml](docker-compose.yml) or in the
