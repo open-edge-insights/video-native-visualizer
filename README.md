@@ -66,6 +66,7 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
 ## Using Labels
 
   In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [builder.py](https://github.com/open-edge-insights/eii-core/blob/master/build/builder.py) script using the below command.
+
   ```sh
   $ python3 builder.py
   ```
