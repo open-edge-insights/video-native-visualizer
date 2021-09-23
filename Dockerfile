@@ -56,12 +56,16 @@ RUN groupadd $EII_USER_NAME -g $EII_UID && \
 
 ARG ARTIFACTS
 ARG CMAKE_INSTALL_PREFIX
+ARG EII_INSTALL_PATH
 ENV PYTHONPATH $PYTHONPATH:/app/.local/lib/python3.8/site-packages:/app
 COPY --from=common ${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_INSTALL_PREFIX}/lib
 COPY --from=common /eii/common/util util
 COPY --from=common /root/.local/lib .local/lib
 COPY --from=builder /root/.local/lib .local/lib
 COPY --from=builder /app .
+RUN mkdir -p ${EII_INSTALL_PATH}/saved_images && \
+    chown -R ${EII_UID}:${EII_UID} ${EII_INSTALL_PATH}/saved_images && \
+    chmod 760 ${EII_INSTALL_PATH}/saved_images
 
 RUN chown -R ${EII_UID} .local/lib/python3.8
 
