@@ -50,6 +50,11 @@ COPY --from=common /usr/local/lib/python3.6/dist-packages/ /usr/local/lib/python
 
 COPY . .
 
+ARG EII_UID
+RUN mkdir -p ${EII_INSTALL_PATH}/saved_images && \
+    chown -R ${EII_UID}:${EII_UID} ${EII_INSTALL_PATH}/saved_images && \
+    chmod 760 ${EII_INSTALL_PATH}/saved_images
+
 #Removing build dependencies
 RUN apt-get remove -y wget && \
     apt-get remove -y git && \
