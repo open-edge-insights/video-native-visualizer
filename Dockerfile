@@ -22,7 +22,7 @@
 
 ARG EII_VERSION
 ARG DOCKER_REGISTRY
-FROM ${DOCKER_REGISTRY}ia_eiibase:$EII_VERSION as eiibase
+FROM ${DOCKER_REGISTRY}ia_openvino_base:$EII_VERSION as openvino
 LABEL description="Visualizer image"
 
 WORKDIR ${PY_WORK_DIR}
@@ -40,7 +40,7 @@ ENV PYTHONPATH ${PY_WORK_DIR}/
 
 FROM ${DOCKER_REGISTRY}ia_common:$EII_VERSION as common
 
-FROM eiibase
+FROM openvino
 
 COPY --from=common ${GO_WORK_DIR}/common/libs ${PY_WORK_DIR}/libs
 COPY --from=common ${GO_WORK_DIR}/common/util ${PY_WORK_DIR}/util
@@ -58,9 +58,9 @@ RUN mkdir -p ${EII_INSTALL_PATH}/saved_images && \
 #Removing build dependencies
 RUN apt-get remove -y wget && \
     apt-get remove -y git && \
-    apt-get remove curl && \
+    apt-get remove -y curl && \
     apt-get autoremove -y
 
 HEALTHCHECK NONE
 
-ENTRYPOINT ["python3.6", "visualize.py"]
+ENTRYPOINT ["./visualizer_start.sh"]
