@@ -12,6 +12,7 @@ Native Visualizer ia a native app to view the classified images/metadata coming 
 ## Steps to build and run visualizer
 
 Please go through the below sections to have visualizer service built and launch it:
+
 - [../README.md#generate-deployment-and-configuration-files](https://github.com/open-edge-insights/eii-core/blob/master/README.md#generate-deployment-and-configuration-files)
 - [../README.md#provision](https://github.com/open-edge-insights/eii-core/blob/master/README.md#provision)
 - [../README.md#build-and-run-eii-videotimeseries-use-cases](https://github.com/open-edge-insights/eii-core/blob/master/README.md#build-and-run-eii-videotimeseries-use-cases)
@@ -19,14 +20,16 @@ Please go through the below sections to have visualizer service built and launch
 For more details, refer [EII core README](https://github.com/open-edge-insights/eii-core/blob/master/README.md)
 
 -----
-> **NOTE**:
+> **NOTE:**
+>
 > 1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
 > 2. The user has to make sure the path provided in docker-compose volumes of visualizer correlates to the one in etcd before running visualizer if he wishes to save images.
 > 3. Run this command in terminal if you run into tkinter couldn't connect to display exception
 
-   ```sh
-   $ xhost +
-   ```
+     ```sh
+     xhost +
+     ```
+>
 > 4. If the Visualizer UI doesn’t show up and if you notice couldn't connect to display ":0" error
    in `docker logs -f ia_visualizer`, please check the value for `DISPLAY` env variable on the host
    machine by running cmd: `env | grep DISPLAY`, please set this as the value for the `DISPLAY`
@@ -42,32 +45,35 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
     Set ":=1" as `DISPLAY` env value in ia_visualizer service
 -----
 
-* If one needs to remove the classified images on a periodic basis:
+- If one needs to remove the classified images on a periodic basis:
 
   1. Have this command running in a separate terminal as a cleanup task to remove images older than 60 mins in IMAGE_DIR. Replace <path-to-IMAGE_DIR> with IMAGE_DIR path given while running visualizer. The -mmin option can be changed accordingly by the user.
 
     ```sh
-    $ while true; do find <path-to-IMAGE_DIR> -mmin +60 -type f -name "*.png" -exec rm -f {} \;;  done
+    while true; do find <path-to-IMAGE_DIR> -mmin +60 -type f -name "*.png" -exec rm -f {} \;;  done
     ```
-* If user needs to remove the bounding box:
+- If user needs to remove the bounding box:
 
   1. Set the value of draw_results in config.json as false for both Visualiser and WebVisualiser.
 
     ```
     draw_results: "false"
     ```
-* If user needs to save images of visualizer:
+- If user needs to save images of visualizer:
 
   1. Set the value of save_image in config.json as true
 
      ```
+
     "save_image": "true"
     ```
+
 ## Using Labels
 
   In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [builder.py](https://github.com/open-edge-insights/eii-core/blob/master/build/builder.py) script using the below command.
+
   ```sh
-  $ python3 builder.py
+  python3 builder.py
   ```
 
   An example of what this JSON value should look like is shown below. In this case
@@ -80,6 +86,7 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
       "1": "SHORT"
   }
   ```
+
   > **NOTE:** These labels are the mapping for the PCB demo provided in EII's visualizer directory. Currently camera1_stream_results consists of pcb demo labeling and camera2_stream_results consists of safety demo labeling.
   Hence, in [config.json](./config.json) proper mapping of all the subscribed topics should be done with pcb demo labeling and safety demo labeling respectively.
 
@@ -144,16 +151,18 @@ A) For Ingestor's **Non-GVA** type, metadata structure sample is :
 where in `defects` and `display_info` is a list of dicts.
 
 Each entry in `defects` list is a dictionary that should contain following keys:
+
 * `type` : value given to type will be the label id
-* `tl` : value is the top-left `x` and `y` co-ordinate of the defect in the image.
-* `br` : value is the bottom-right `x` and `y` co-ordinate of the defect in the image.
+- `tl` : value is the top-left `x` and `y` co-ordinate of the defect in the image.
+- `br` : value is the bottom-right `x` and `y` co-ordinate of the defect in the image.
 
 Each entry in `display_info` list is a dictionary that should contain following keys:
+
 * `info` : value given will be displayed on the image.
-* `priority` : Based on the priority level (0, 1, or 2), info will be displayed in either green, orange or red.
-    * 0 : Low priority, info will be displayed in green.
-    * 1 : Medium priority, info will be displayed in orange.
-    * 2 : High priority, info will be displayed in red.
+- `priority` : Based on the priority level (0, 1, or 2), info will be displayed in either green, orange or red.
+  - 0 : Low priority, info will be displayed in green.
+  - 1 : Medium priority, info will be displayed in orange.
+  - 2 : High priority, info will be displayed in red.
 
 ----
 B) For Ingestor's **GVA** type, metadata structure sample is :
@@ -176,6 +185,7 @@ B) For Ingestor's **GVA** type, metadata structure sample is :
 }
 
 ```
+
 where in `gva_meta` is a list of dicts.
 
-**NOTE**: Any data with in the list, tuple or dict of meta data should be of primitive data type (int, float, string, bool). Refer the examples given above.
+>**NOTE:** Any data with in the list, tuple or dict of meta data should be of primitive data type (int, float, string, bool). Refer the examples given above.
