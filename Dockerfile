@@ -44,7 +44,7 @@ USER root
 
 # Setting python dev env
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3-tk && \
+    apt-get install -y --no-install-recommends python3-tk libcjson1 libzmq5  && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
