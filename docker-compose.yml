@@ -64,6 +64,6 @@ services:
       - "${EII_INSTALL_PATH}/saved_images:${EII_INSTALL_PATH}/saved_images"
       - "/tmp/.X11-unix:/tmp/.X11-unix"
       - "vol_eii_socket:${SOCKET_DIR}"
-      - ./Certificates/Visualizer:/run/secrets/Visualizer
-      - ./Certificates/rootca:/run/secrets/rootca
+      - ./Certificates/Visualizer:/run/secrets/Visualizer:ro
+      - ./Certificates/rootca/cacert.pem:/run/secrets/rootca/cacert.pem
 
