@@ -1,15 +1,18 @@
-**Contents**
+# Contents
 
-- [Native Visualizer Module](#native-visualizer-module)
-  - [Steps to build and run visualizer](#steps-to-build-and-run-visualizer)
-  - [Using Labels](#using-labels)
-  - [Metadata Structure](#metadata-structure)
+- [Contents](#contents)
+  - [Native Visualizer Module](#native-visualizer-module)
+    - [Steps to build and run visualizer](#steps-to-build-and-run-visualizer)
+    - [Using Labels](#using-labels)
+    - [Metadata Structure](#metadata-structure)
 
-# Native Visualizer Module
+## Native Visualizer Module
 
-Native Visualizer ia a native app to view the classified images/metadata coming out of EII.
+Native Visualizer ia a native app to view the classified images/metadata coming out of OEI.
 
-## Steps to build and run visualizer
+>**Note:** In this document, you will find labels of 'Edge Insights for Industrial (EII)' for filenames, paths, code snippets, and so on. Consider the references of EII as Open Edge Insights (OEI). This is due to the product name change of EII as OEI.
+
+### Steps to build and run visualizer
 
 Please go through the below sections to have visualizer service built and launch it:
 
@@ -17,9 +20,8 @@ Please go through the below sections to have visualizer service built and launch
 - [../README.md#provision](https://github.com/open-edge-insights/eii-core/blob/master/README.md#provision)
 - [../README.md#build-and-run-eii-videotimeseries-use-cases](https://github.com/open-edge-insights/eii-core/blob/master/README.md#build-and-run-eii-videotimeseries-use-cases)
 
-For more details, refer [EII core README](https://github.com/open-edge-insights/eii-core/blob/master/README.md)
+For more details, refer [OEI core README](https://github.com/open-edge-insights/eii-core/blob/master/README.md)
 
------
 > **NOTE:**
 >
 > 1. The admin has to make sure all the necessary config is set in etcd before starting the visualizer.
@@ -29,7 +31,6 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
      ```sh
      xhost +
      ```
->
 > 4. If the Visualizer UI doesn’t show up and if you notice couldn't connect to display ":0" error
    in `docker logs -f ia_visualizer`, please check the value for `DISPLAY` env variable on the host
    machine by running cmd: `env | grep DISPLAY`, please set this as the value for the `DISPLAY`
@@ -43,7 +44,7 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
     DISPLAY:=1
     ```
     Set ":=1" as `DISPLAY` env value in ia_visualizer service
------
+
 
 - If one needs to remove the classified images on a periodic basis:
 
@@ -68,7 +69,7 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
     "save_image": "true"
     ```
 
-## Using Labels
+### Using Labels
 
   In order to have the visualizer label each of the defects on the image, labels in JSON format(with mapping between topic subscribed text to be displayed) has to be provided in [config.json](./config.json) file and run the [builder.py](https://github.com/open-edge-insights/eii-core/blob/master/build/builder.py) script using the below command.
 
@@ -87,7 +88,7 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
   }
   ```
 
-  > **NOTE:** These labels are the mapping for the PCB demo provided in EII's visualizer directory. Currently camera1_stream_results consists of pcb demo labeling and camera2_stream_results consists of safety demo labeling.
+  > **NOTE:** These labels are the mapping for the PCB demo provided in OEI's visualizer directory. Currently camera1_stream_results consists of pcb demo labeling and camera2_stream_results consists of safety demo labeling.
   Hence, in [config.json](./config.json) proper mapping of all the subscribed topics should be done with pcb demo labeling and safety demo labeling respectively.
 
 ```json
@@ -122,10 +123,10 @@ For more details, refer [EII core README](https://github.com/open-edge-insights/
   }
 ```
 
-## Metadata Structure
+### Metadata Structure
 
-EII Visualizer app can decode certain types of mete-data formats for drawing the defects on the image.
-Any application wanting to use EII visualizer need to comply with the meta-data format as described below:
+OEI Visualizer app can decode certain types of mete-data formats for drawing the defects on the image.
+Any application wanting to use OEI visualizer need to comply with the meta-data format as described below:
 
 A) For Ingestor's **Non-GVA** type, metadata structure sample is :
 
