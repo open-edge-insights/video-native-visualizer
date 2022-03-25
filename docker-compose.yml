@@ -58,20 +58,12 @@ services:
       ETCD_CLIENT_PORT: ${ETCD_CLIENT_PORT}
       ETCD_PREFIX: ${ETCD_PREFIX}
       # MessageBus Endpoint Configuration
-      CertType: "zmq"
     networks:
       - eii
     volumes:
       - "${EII_INSTALL_PATH}/saved_images:${EII_INSTALL_PATH}/saved_images"
       - "/tmp/.X11-unix:/tmp/.X11-unix"
       - "vol_eii_socket:${SOCKET_DIR}"
-    secrets:
-      - ca_etcd
-      - etcd_Visualizer_cert
-      - etcd_Visualizer_key
+      - ./Certificates/Visualizer:/run/secrets/Visualizer:ro
+      - ./Certificates/rootca/cacert.pem:/run/secrets/rootca/cacert.pem
 
-secrets:
-  etcd_Visualizer_cert:
-    file: provision/Certificates/Visualizer/Visualizer_client_certificate.pem
-  etcd_Visualizer_key:
-    file: provision/Certificates/Visualizer/Visualizer_client_key.pem
