@@ -31,3 +31,6 @@ spec:
   resources:
     requests:
       storage: {{ .Values.volumes.savedimage.size }}
+  selector:
+    matchLabels:
+      name: "savedimage"

@@ -25,7 +25,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   name: {{ .Values.volumes.savedimage.name }}
   labels:
-    type: local
+    name: "savedimage"
 spec:
   storageClassName: {{ .Values.storageClassName }}
   capacity:
